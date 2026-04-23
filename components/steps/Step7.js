@@ -30,7 +30,7 @@ export default function Step7({ bikeLabel }) {
       <p className="steps__subtitle">
         Showing: <strong>{bikeLabel}</strong>
       </p>
-
+ 
       <div className="steps__single-col">
         <div className="steps__form-card">
           <ol className="steps__confirm-list">
@@ -44,7 +44,7 @@ export default function Step7({ bikeLabel }) {
               </li>
             ))}
           </ol>
-
+ 
           <div className="steps__confirm-note">
             <span className="steps__confirm-note-icon">&#9203;</span>
             <div>

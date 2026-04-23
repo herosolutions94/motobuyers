@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useFormContext, Controller } from "react-hook-form";
 
 const MAX = 5000;
 const STEP = 500;
@@ -19,19 +20,21 @@ function TireCard({ label, value, unknown, onSlide, onToggleUnknown }) {
   const pct = (value / MAX) * 100;
 
   return (
-    <div className={`steps__tire-card${unknown ? " steps__tire-card--unknown" : ""}`}>
-      {/* Header */}
+    <div
+      className={`steps__tire-card${unknown ? " steps__tire-card--unknown" : ""}`}
+    >
       <div className="steps__tire-card-header">
         <span className="steps__tire-card-title">{label}</span>
         <label className="steps__tire-toggle-row">
-          <span className={`steps__tire-toggle-label${unknown ? " steps__tire-toggle-label--on" : ""}`}>
+          <span
+            className={`steps__tire-toggle-label${unknown ? " steps__tire-toggle-label--on" : ""}`}
+          >
             I don&apos;t know
           </span>
           <ToggleSwitch on={unknown} onToggle={onToggleUnknown} />
         </label>
       </div>
 
-      {/* Value display */}
       <div className="steps__tire-card-display">
         {unknown ? (
           <span className="steps__tire-unknown">Unknown</span>
@@ -42,7 +45,6 @@ function TireCard({ label, value, unknown, onSlide, onToggleUnknown }) {
         )}
       </div>
 
-      {/* Slider */}
       <div className="steps__tire-card-slider">
         <input
           type="range"
@@ -64,46 +66,37 @@ function TireCard({ label, value, unknown, onSlide, onToggleUnknown }) {
   );
 }
 
-export default function Step4d({ data, onChange }) {
-  const [frontMiles, setFrontMiles] = useState(data.frontTireMiles ?? 0);
-  const [rearMiles, setRearMiles] = useState(data.rearTireMiles ?? 0);
-  const [frontUnknown, setFrontUnknown] = useState(data.frontTireNotSure ?? false);
-  const [rearUnknown, setRearUnknown] = useState(data.rearTireNotSure ?? false);
+export default function Step4d() {
+  const { watch, setValue } = useFormContext();
 
-  const handleFront = (val) => { setFrontMiles(val); onChange({ frontTireMiles: val }); };
-  const handleRear = (val) => { setRearMiles(val); onChange({ rearTireMiles: val }); };
-
-  const toggleFront = () => {
-    const next = !frontUnknown;
-    setFrontUnknown(next);
-    onChange({ frontTireNotSure: next });
-  };
-
-  const toggleRear = () => {
-    const next = !rearUnknown;
-    setRearUnknown(next);
-    onChange({ rearTireNotSure: next });
-  };
+  const frontMiles = watch("frontTireMiles") ?? 0;
+  const rearMiles = watch("rearTireMiles") ?? 0;
+  const frontUnknown = watch("frontTireNotSure") ?? false;
+  const rearUnknown = watch("rearTireNotSure") ?? false;
 
   return (
     <section className="steps__section">
-      <h1 className="steps__title">About how many miles are on the current tires?</h1>
-      <p className="steps__subtitle">Approximate is fine. This helps us understand remaining life.</p>
+      <h1 className="steps__title">
+        About how many miles are on the current tires?
+      </h1>
+      <p className="steps__subtitle">
+        Approximate is fine. This helps us understand remaining life.
+      </p>
 
       <div className="steps__tire-grid">
         <TireCard
           label="Front tire"
           value={frontMiles}
           unknown={frontUnknown}
-          onSlide={handleFront}
-          onToggleUnknown={toggleFront}
+          onSlide={(val) => setValue("frontTireMiles", val)}
+          onToggleUnknown={() => setValue("frontTireNotSure", !frontUnknown)}
         />
         <TireCard
           label="Rear tire"
           value={rearMiles}
           unknown={rearUnknown}
-          onSlide={handleRear}
-          onToggleUnknown={toggleRear}
+          onSlide={(val) => setValue("rearTireMiles", val)}
+          onToggleUnknown={() => setValue("rearTireNotSure", !rearUnknown)}
         />
       </div>
     </section>

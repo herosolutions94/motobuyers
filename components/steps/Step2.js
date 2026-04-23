@@ -1,65 +1,116 @@
-export default function Step2({ data, onChange }) {
+import { useFormContext, Controller } from "react-hook-form";
+
+export default function Step2() {
+  const {
+    register,
+    watch,
+    setValue,
+    control,
+    formState: { errors },
+  } = useFormContext();
+  const ridden = watch("ridden");
+
   return (
     <section className="steps__section">
       <h1 className="steps__title">Tell us a bit more about your bike</h1>
 
       <div className="steps__single-col">
         <div className="steps__form-card">
+          {/* Mileage */}
           <label className="steps__field-label">Mileage</label>
           <p className="steps__field-hint">To the best of your knowledge</p>
           <div className="steps__input-wrap">
             <input
+              {...register("mileage", {
+                required: "Please enter the mileage",
+                validate: (v) => {
+                  const num = parseInt(String(v).replace(/,/g, ""), 10);
+                  return (
+                    (!isNaN(num) && num >= 0) || "Please enter a valid mileage"
+                  );
+                },
+              })}
               type="text"
-              className="steps__input steps__input--suffix"
+              className={`steps__input steps__input--suffix${errors.mileage ? " steps__input--error" : ""}`}
               placeholder="Enter mileage"
-              value={data.mileage || ""}
-              onChange={(e) => onChange({ mileage: e.target.value })}
             />
             <span className="steps__input-suffix">miles</span>
           </div>
+          {errors.mileage && (
+            <p className="steps__field-error">{errors.mileage.message}</p>
+          )}
 
+          {/* ZIP */}
           <label className="steps__field-label" style={{ marginTop: "2rem" }}>
             ZIP code
           </label>
           <input
+            {...register("zip", {
+              required: "Please enter your ZIP code",
+              pattern: {
+                value: /^\d{5}(-\d{4})?$/,
+                message: "Please enter a valid ZIP code",
+              },
+            })}
             type="text"
-            className="steps__input"
+            className={`steps__input${errors.zip ? " steps__input--error" : ""}`}
             placeholder="Enter Zip code"
-            value={data.zip || ""}
-            onChange={(e) => onChange({ zip: e.target.value })}
+            maxLength={10}
           />
+          {errors.zip && (
+            <p className="steps__field-error">{errors.zip.message}</p>
+          )}
 
+          {/* Ridden in last 30 days */}
           <label className="steps__field-label" style={{ marginTop: "2rem" }}>
             Has this bike been ridden in the last 30 days?
           </label>
-          <div className="steps__yesno">
-            <button
-              className={`steps__yesno-btn ${data.ridden === "yes" ? "steps__yesno-btn--active" : ""}`}
-              onClick={() => onChange({ ridden: "yes" })}
-              type="button"
-            >
-              Yes
-            </button>
-            <button
-              className={`steps__yesno-btn ${data.ridden === "no" ? "steps__yesno-btn--active" : ""}`}
-              onClick={() => onChange({ ridden: "no" })}
-              type="button"
-            >
-              No
-            </button>
-          </div>
+          <Controller
+            name="ridden"
+            control={control}
+            rules={{ required: "Please select an option" }}
+            render={({ field }) => (
+              <div className="steps__yesno">
+                {["Yes", "No"].map((opt) => {
+                  const val = opt.toLowerCase();
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      className={`steps__yesno-btn ${field.value === val ? "steps__yesno-btn--active" : ""}`}
+                      onClick={() => field.onChange(val)}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          />
+          {errors.ridden && (
+            <p className="steps__field-error">{errors.ridden.message}</p>
+          )}
 
+          {/* Email */}
           <label className="steps__field-label" style={{ marginTop: "2rem" }}>
             Email address
           </label>
           <p className="steps__field-hint">We send your offer here</p>
           <input
+            {...register("email", {
+              required: "Please enter your email address",
+              pattern: {
+                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                message: "Please enter a valid email address",
+              },
+            })}
             type="email"
-            className="steps__input"
+            className={`steps__input${errors.email ? " steps__input--error" : ""}`}
             placeholder="e.g. name@email.com"
-            value={data.email || ""}
-            onChange={(e) => onChange({ email: e.target.value })}
           />
+          {errors.email && (
+            <p className="steps__field-error">{errors.email.message}</p>
+          )}
         </div>
       </div>
     </section>

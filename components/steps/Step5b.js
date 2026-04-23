@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
+import { useFormContext } from "react-hook-form";
 
-export default function Step5b({ data, onChange }) {
+export default function Step5b() {
+  const { watch, setValue } = useFormContext();
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
-  const photos = data.photos || [];
+  const photos = watch("photos") || [];
 
   const addFiles = (files) => {
     const incoming = Array.from(files).map((file) => ({
@@ -11,11 +13,14 @@ export default function Step5b({ data, onChange }) {
       url: URL.createObjectURL(file),
       name: file.name,
     }));
-    onChange({ photos: [...photos, ...incoming].slice(0, 30) });
+    setValue("photos", [...photos, ...incoming].slice(0, 30));
   };
 
   const removePhoto = (id) => {
-    onChange({ photos: photos.filter((p) => p.id !== id) });
+    setValue(
+      "photos",
+      photos.filter((p) => p.id !== id),
+    );
   };
 
   const handleDrop = (e) => {
@@ -32,23 +37,32 @@ export default function Step5b({ data, onChange }) {
       </p>
 
       <div className="steps__single-col">
-        {/* Upload zone */}
         <div
           className={`steps__upload-zone${dragging ? " steps__upload-zone--drag" : ""}`}
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
         >
           <div className="steps__upload-header">
             <span className="steps__upload-icon">
               <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
-                <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="var(--color-red)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path
+                  d="M12 16V4M12 4l-4 4M12 4l4 4"
+                  stroke="var(--color-red)"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </span>
             <div>
               <p className="steps__upload-title">Upload photos</p>
               <p className="steps__upload-hint">
-                Drag photos here or browse your computer. Uploads start immediately in the background.
+                Drag photos here or browse your computer. Uploads start
+                immediately in the background.
               </p>
             </div>
           </div>
@@ -71,13 +85,11 @@ export default function Step5b({ data, onChange }) {
           </button>
         </div>
 
-        {/* Meta row */}
         <div className="steps__upload-meta">
           <span>Up to 30 photos</span>
           <span>Uploads saved with your draft automatically.</span>
         </div>
 
-        {/* Thumbnails */}
         {photos.length > 0 && (
           <div className="steps__upload-thumbs">
             {photos.map((p) => (
@@ -90,8 +102,24 @@ export default function Step5b({ data, onChange }) {
                   aria-label="Remove photo"
                 >
                   <svg viewBox="0 0 24 24" fill="none" width="12" height="12">
-                    <line x1="18" y1="6" x2="6" y2="18" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-                    <line x1="6" y1="6" x2="18" y2="18" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
+                    <line
+                      x1="18"
+                      y1="6"
+                      x2="6"
+                      y2="18"
+                      stroke="#fff"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1="6"
+                      y1="6"
+                      x2="18"
+                      y2="18"
+                      stroke="#fff"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </button>
               </div>

@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useFormContext } from "react-hook-form";
 
 const MECHANICAL_ISSUES = [
   "Engine or transmission issue",
@@ -8,36 +9,43 @@ const MECHANICAL_ISSUES = [
   "Starting problem",
   "Unusual noise or vibration",
   "Overheating or stalling",
-  "Other",
 ];
 
-export default function Step4b({ data, onChange }) {
-  const selected = data.mechanicalIssues || [];
-  const otherChecked = data.otherChecked || false;
-  const otherText = data.otherText || "";
-  const noIssues = data.noIssues || false;
+const CheckIcon = () => (
+  <svg viewBox="0 0 12 10" fill="none" width="12" height="10">
+    <polyline points="1,5 4.5,8.5 11,1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export default function Step4b() {
+  const { watch, setValue, formState: { errors } } = useFormContext();
   const inputRef = useRef(null);
 
+  const selected = watch("mechanicalIssues") || [];
+  const otherChecked = watch("mechOtherChecked") || false;
+  const otherText = watch("mechOtherText") || "";
+  const noIssues = watch("mechNoIssues") || false;
+
   const toggle = (issue) => {
-    if (issue === "Other") {
-      const next = !otherChecked;
-      onChange({ otherChecked: next, noIssues: false });
-      if (next) setTimeout(() => inputRef.current?.focus(), 50);
-      return;
-    }
     const updated = selected.includes(issue)
       ? selected.filter((i) => i !== issue)
       : [...selected, issue];
-    onChange({ mechanicalIssues: updated, noIssues: false });
+    setValue("mechanicalIssues", updated);
+    setValue("mechNoIssues", false);
+  };
+
+  const toggleOther = () => {
+    const next = !otherChecked;
+    setValue("mechOtherChecked", next);
+    setValue("mechNoIssues", false);
+    if (next) setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const handleNoIssues = () => {
-    onChange({
-      mechanicalIssues: [],
-      otherChecked: false,
-      otherText: "",
-      noIssues: true,
-    });
+    setValue("mechanicalIssues", []);
+    setValue("mechOtherChecked", false);
+    setValue("mechOtherText", "");
+    setValue("mechNoIssues", true);
   };
 
   return (
@@ -48,45 +56,42 @@ export default function Step4b({ data, onChange }) {
       <div className="steps__single-col">
         <div className="steps__checkbox-list">
           {MECHANICAL_ISSUES.map((issue) => {
-            const isOther = issue === "Other";
-            const checked = isOther ? otherChecked : selected.includes(issue);
+            const checked = selected.includes(issue);
             return (
               <label
                 key={issue}
                 className={`steps__checkbox-row ${checked ? "steps__checkbox-row--active" : ""}`}
                 onClick={() => toggle(issue)}
               >
-                <span className="steps__checkbox-box">
-                  {checked && (
-                    <svg viewBox="0 0 12 10" fill="none" width="12" height="10">
-                      <polyline
-                        points="1,5 4.5,8.5 11,1"
-                        stroke="#fff"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </span>
-                {isOther && otherChecked ? (
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    className="steps__checkbox-other-input"
-                    placeholder="Describe the issue..."
-                    value={otherText}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) =>
-                      onChange({ otherText: e.target.value, noIssues: false })
-                    }
-                  />
-                ) : (
-                  <span className="steps__checkbox-label">{issue}</span>
-                )}
+                <span className="steps__checkbox-box">{checked && <CheckIcon />}</span>
+                <span className="steps__checkbox-label">{issue}</span>
               </label>
             );
           })}
+
+          {/* Other row */}
+          <label
+            className={`steps__checkbox-row ${otherChecked ? "steps__checkbox-row--active" : ""}`}
+            onClick={toggleOther}
+          >
+            <span className="steps__checkbox-box">{otherChecked && <CheckIcon />}</span>
+            {otherChecked ? (
+              <input
+                ref={inputRef}
+                type="text"
+                className="steps__checkbox-other-input"
+                placeholder="Describe the issue..."
+                value={otherText}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  setValue("mechOtherText", e.target.value);
+                  setValue("mechNoIssues", false);
+                }}
+              />
+            ) : (
+              <span className="steps__checkbox-label">Other</span>
+            )}
+          </label>
         </div>
 
         {/* OR divider */}
@@ -104,6 +109,12 @@ export default function Step4b({ data, onChange }) {
           </span>
           <span className="steps__checkbox-label">No mechanical issues</span>
         </label>
+
+        {errors.mechanicalIssues && (
+          <p className="steps__field-error" style={{ marginTop: "0.75rem" }}>
+            {errors.mechanicalIssues.message}
+          </p>
+        )}
       </div>
     </section>
   );

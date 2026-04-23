@@ -1613,3 +1613,90 @@
     font-size: 14px;
   }
 }
+
+/* Validation error states */
+.steps__field-error {
+  color: var(--color-red, #dc2626);
+  font-size:15px;
+  margin-top: 0.45rem;
+  margin-bottom: 0;
+  font-family: inherit;
+  font-weight: 500;
+}
+ 
+.steps__input--error,
+.steps__custom-select__trigger.steps__input--error {
+  border-color: var(--color-red, #dc2626) !important;
+  background-color: #fff8f8;
+}
+ 
+/* Unsupported year banner */
+.steps__unsupported-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  background: #fff8f8;
+  border: 1.5px solid var(--color-red, #dc2626);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+  margin-top: 1.4rem;
+}
+ 
+.steps__unsupported-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+ 
+.steps__unsupported-title {
+  font-weight: 600;
+  font-size: 17px;
+  color: #1a1a1a;
+  margin: 0 0 0.3rem;
+}
+ 
+.steps__unsupported-desc {
+  font-size: 11px;
+  color: #555;
+  margin: 0;
+  line-height: 1.5;
+}
+
+
+
+/* ─── VIN decode spinner ────────────────────────────────────────────────────── */
+@keyframes steps-spin {
+  to { transform: rotate(360deg); }
+}
+.steps__vin-spinner {
+  animation: steps-spin 0.75s linear infinite;
+  transform-origin: center;
+  display: block;
+}
+.steps__custom-select__separator {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4px 0;
+  pointer-events: none;
+}
+ 
+/* ─── Italic "Before 2003" / "Other" option ────────────────────────────────── */
+.steps__custom-select__option--italic {
+  font-style: italic;
+  color: #6b7280;
+}
+ 
+.steps__custom-select__option--italic:hover {
+  color: #111;
+}
+ 
+/* ─── Disabled option (non-interactive) ────────────────────────────────────── */
+.steps__custom-select__option--disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+ 
+
+
+
+
