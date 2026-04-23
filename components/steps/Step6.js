@@ -1,4 +1,5 @@
 import { useFormContext } from "react-hook-form";
+import InputMask from "react-input-mask";
 
 export default function Step6() {
   const {
@@ -36,19 +37,21 @@ export default function Step6() {
 
           <div className="steps__contact-field" style={{ marginTop: "2rem" }}>
             <label className="steps__field-label !mb-[0]">Phone Number</label>
-            <input
+            <InputMask
+              mask="(999) 999-9999"
               {...register("phone", {
                 required: "Please enter your phone number",
-                pattern: {
-                  value:
-                    /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/,
-                  message: "Please enter a valid phone number",
-                },
               })}
-              type="tel"
-              className={`steps__input steps__input--rect${errors.phone ? " steps__input--error" : ""}`}
-              placeholder="(555) 000-0000"
-            />
+            >
+              {(inputProps) => (
+                <input
+                  {...inputProps}
+                  type="tel"
+                  className={`steps__input steps__input--rect${errors.phone ? " steps__input--error" : ""}`}
+                  placeholder="(555) 000-0000"
+                />
+              )}
+            </InputMask>
             {errors.phone && (
               <p className="steps__field-error">{errors.phone.message}</p>
             )}

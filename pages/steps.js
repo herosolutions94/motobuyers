@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import Contain from "../components/contain";
 import Step1 from "../components/steps/Step1";
@@ -14,6 +14,8 @@ import Step5 from "../components/steps/Step5";
 import Step5b from "../components/steps/Step5b";
 import Step6 from "../components/steps/Step6";
 import Step7 from "../components/steps/Step7";
+
+import { HERO_PREFILL_KEY } from "../components/HeroSection";
 
 // ─── Step IDs ────────────────────────────────────────────────────────────────
 const STEP_IDS = [
@@ -130,6 +132,36 @@ export default function StepsPage() {
 
   const sequence = buildSequence(valuesObj);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // ─── Read hero prefill from sessionStorage on mount ─────────────────────
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(HERO_PREFILL_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(HERO_PREFILL_KEY); // consume once
+
+      const prefill = JSON.parse(raw);
+
+      // Populate all relevant RHF fields
+      Object.entries(prefill).forEach(([key, value]) => {
+        methods.setValue(key, value, { shouldValidate: false });
+      });
+
+      // Jump straight to Step 2 ("vehicle-details")
+      // We need to find its index in the current sequence.
+      // Build a fresh sequence with the incoming values so skip-logic is correct.
+      const freshSeq = buildSequence({
+        cosmetic: null,
+        mechanical: null,
+        mileage: "",
+      });
+      const step2Index = freshSeq.indexOf("vehicle-details");
+      if (step2Index > 0) setCurrentIndex(step2Index);
+    } catch {
+      // Silently ignore parse errors
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const currentStepId = sequence[currentIndex];
   const progress = PROGRESS_MAP[currentStepId] ?? 0;
   const isLastStep = currentStepId === "thank-you";
@@ -236,8 +268,10 @@ export default function StepsPage() {
     return "Your Motorcycle";
   })();
 
+  const hasPhotos = (allValues.photos || []).length > 0;
+
   const continueBtnLabel = isPhotosStep
-    ? "Skip for now"
+    ? hasPhotos ? "Continue" : "Skip for now"
     : isSubmitStep
       ? "Submit for Appraisal"
       : "Continue";
@@ -246,6 +280,7 @@ export default function StepsPage() {
     <FormProvider {...methods}>
       <Head>
         <title>Get My Offer – MotoBuyers</title>
+
         <meta name="description" content="A simple process. A real offer. A smooth ride to instant cash." />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
@@ -278,7 +313,7 @@ export default function StepsPage() {
           {currentStepId === "title-financial" && <Step5 bikeLabel={bikeLabel} />}
           {currentStepId === "photos" && <Step5b />}
           {currentStepId === "contact-submit" && <Step6 bikeLabel={bikeLabel} />}
-          {currentStepId === "thank-you" && <Step7 bikeLabel={bikeLabel} />}
+          {currentStepId === "thank-you" && <Step7 bikeLabel={bikeLabel} firstName={allValues.firstName} />}
         </Contain>
 
         {/* Footer Nav */}
@@ -305,4 +340,12 @@ export default function StepsPage() {
       </main>
     </FormProvider>
   );
+}
+
+// Tells Next.js this is an SSR page — required when _app.js uses
+// getInitialProps, which opts the whole app into server-side rendering.
+// Without this, Next.js tries to statically generate /steps and throws:
+// "You cannot use getStaticProps with getServerSideProps"
+export async function getServerSideProps() {
+  return { props: {} };
 }
