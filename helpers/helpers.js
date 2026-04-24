@@ -287,3 +287,17 @@ export function timeAgo(date) {
 export function format_amount(amount) {
   return "$" + amount;
 }
+
+// ─── Helper: parse a mileage string like "12,500" → 12500 ────────────────────
+export function parseMileage(raw) {
+  if (!raw) return null;
+  const n = parseInt(String(raw).replace(/,/g, ""), 10);
+  return isNaN(n) ? null : n;
+}
+
+// ─── Helper: parse a currency string like "4,500.00" → 4500.00 ───────────────
+export function parseCurrency(raw) {
+  if (!raw) return null;
+  const n = parseFloat(String(raw).replace(/,/g, ""));
+  return isNaN(n) ? null : n;
+}

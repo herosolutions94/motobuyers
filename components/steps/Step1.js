@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useFormContext, Controller } from "react-hook-form";
 
-// ─── Custom Select ───────────────────────────────────────────────────────────
-// Each option can be: a plain value, or { value, label, italic, disabled, separator }
+
 function CustomSelect({ value, onChange, options, placeholder, error }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
