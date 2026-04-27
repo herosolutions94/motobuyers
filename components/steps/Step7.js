@@ -1,31 +1,20 @@
 const NEXT_STEPS = [
-  {
-    num: 1,
-    title: "Review",
-    desc: "One of our appraisers will carefully review your submission.",
-  },
-  {
-    num: 2,
-    title: "Receive Your Offer",
-    desc: "We'll send you a no-hassle, fair-market offer based on your bike's condition and local demand.",
-  },
-  {
-    num: 3,
-    title: "Ask Questions or Schedule Pickup",
-    desc: "You can chat with us, ask questions, or schedule an in-person appointment.",
-  },
-  {
-    num: 4,
-    title: "Get Paid",
-    desc: "Accept the offer, hand off the keys, and get paid — it's that simple.",
-  },
+  { num: 1, title: "Review", desc: "One of our appraisers will carefully review your submission." },
+  { num: 2, title: "Receive Your Offer", desc: "We'll send you a no-hassle, fair-market offer based on your bike's condition and local demand." },
+  { num: 3, title: "Ask Questions or Schedule Pickup", desc: "You can chat with us, ask questions, or schedule an in-person appointment." },
+  { num: 4, title: "Get Paid", desc: "Accept the offer, hand off the keys, and get paid — it's that simple." },
 ];
 
-export default function Step7({ bikeLabel }) {
+export default function Step7({ bikeLabel, firstName }) {
+  const name = firstName ? firstName.trim() : "";
+
   return (
     <section className="steps__section">
       <h1 className="steps__title steps__title--italic">
-        Thanks &mdash; we&apos;ve got everything we need!
+        {name
+          ? <>Thank you, {name} &mdash; we&apos;ve got everything we need!</>
+          : <>Thanks &mdash; we&apos;ve got everything we need!</>
+        }
       </h1>
       <p className="steps__subtitle">
         Showing: <strong>{bikeLabel}</strong>

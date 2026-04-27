@@ -1,3 +1,5 @@
+import { useFormContext, Controller } from "react-hook-form";
+
 const TITLE_TYPES = [
   "Clean",
   "Salvage",
@@ -27,32 +29,56 @@ function CheckIcon() {
   );
 }
 
-export default function Step5({ data, onChange }) {
-  const showLoan = data.hasLoan === "yes";
+export default function Step5() {
+  const {
+    watch,
+    setValue,
+    register,
+    control,
+    formState: { errors },
+  } = useFormContext();
+
+  const titleType = watch("titleType");
+  const hasLoan = watch("hasLoan");
+  const notSurePayoff = watch("notSurePayoff");
+  const notSurePrice = watch("notSurePrice");
+  const showLoan = hasLoan === "yes";
 
   return (
     <section className="steps__section">
       <h1 className="steps__title">Title and financial details</h1>
 
       <div className="steps__single-col">
-
         {/* ── Card 1: Title type ── */}
         <div className="steps__form-card">
-          <div className="steps__option-list">
-            {TITLE_TYPES.map((t) => {
-              const active = data.titleType === t;
-              return (
-                <label
-                  key={t}
-                  className={`steps__checkbox-row ${active ? "steps__checkbox-row--active" : ""}`}
-                  onClick={() => onChange({ titleType: t })}
-                >
-                  <CircleBox active={active} />
-                  <span className="steps__checkbox-label">{t}</span>
-                </label>
-              );
-            })}
-          </div>
+          <p className="steps__field-label steps__field-label--lg">
+            Title type
+          </p>
+          <Controller
+            name="titleType"
+            control={control}
+            rules={{ required: "Please select a title type" }}
+            render={({ field }) => (
+              <div className="steps__option-list">
+                {TITLE_TYPES.map((t) => {
+                  const active = field.value === t;
+                  return (
+                    <label
+                      key={t}
+                      className={`steps__checkbox-row ${active ? "steps__checkbox-row--active" : ""}`}
+                      onClick={() => field.onChange(t)}
+                    >
+                      <CircleBox active={active} />
+                      <span className="steps__checkbox-label">{t}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          />
+          {errors.titleType && (
+            <p className="steps__field-error">{errors.titleType.message}</p>
+          )}
         </div>
 
         {/* ── Card 2: Loan ── */}
@@ -61,46 +87,62 @@ export default function Step5({ data, onChange }) {
             Do you have a loan on this bike?
           </p>
 
-          {/* Yes / No toggle */}
-          <div className="steps__yesno">
-            {["Yes", "No"].map((opt) => {
-              const val = opt.toLowerCase();
-              const active = data.hasLoan === val;
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  className={`steps__yesno-btn ${active ? "steps__yesno-btn--active" : ""}`}
-                  onClick={() => onChange({ hasLoan: val, payoffAmount: "", notSurePayoff: false })}
-                >
-                  {opt}
-                </button>
-              );
-            })}
-          </div>
+          <Controller
+            name="hasLoan"
+            control={control}
+            rules={{ required: "Please select yes or no" }}
+            render={({ field }) => (
+              <div className="steps__yesno">
+                {["Yes", "No"].map((opt) => {
+                  const val = opt.toLowerCase();
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      className={`steps__yesno-btn ${field.value === val ? "steps__yesno-btn--active" : ""}`}
+                      onClick={() => {
+                        field.onChange(val);
+                        setValue("payoffAmount", "");
+                        setValue("notSurePayoff", false);
+                      }}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          />
+          {errors.hasLoan && (
+            <p className="steps__field-error">{errors.hasLoan.message}</p>
+          )}
 
           {/* Payoff amount — visible when loan = yes */}
           {showLoan && (
             <div className="steps__fin-reveal" style={{ marginTop: "2rem" }}>
               <p className="steps__field-label">Payoff amount</p>
               <div className="steps__amount-row">
-                <div className={`steps__amount-input-wrap ${!data.notSurePayoff && data.payoffAmount ? "steps__amount-input-wrap--active" : ""} ${data.notSurePayoff ? "steps__amount-input-wrap--disabled" : ""}`}>
+                <div
+                  className={`steps__amount-input-wrap ${!notSurePayoff && watch("payoffAmount") ? "steps__amount-input-wrap--active" : ""} ${notSurePayoff ? "steps__amount-input-wrap--disabled" : ""}`}
+                >
                   <span className="steps__amount-dollar">$</span>
                   <input
+                    {...register("payoffAmount")}
                     type="text"
                     className="steps__amount-input"
                     placeholder="Enter amount"
-                    value={data.payoffAmount || ""}
-                    disabled={data.notSurePayoff}
-                    onChange={(e) => onChange({ payoffAmount: e.target.value, notSurePayoff: false })}
+                    disabled={notSurePayoff}
                   />
                 </div>
                 <button
                   type="button"
-                  className={`steps__not-sure-btn ${data.notSurePayoff ? "steps__not-sure-btn--active" : ""}`}
-                  onClick={() => onChange({ notSurePayoff: !data.notSurePayoff, payoffAmount: "" })}
+                  className={`steps__not-sure-btn ${notSurePayoff ? "steps__not-sure-btn--active" : ""}`}
+                  onClick={() => {
+                    setValue("notSurePayoff", !notSurePayoff);
+                    setValue("payoffAmount", "");
+                  }}
                 >
-                  {data.notSurePayoff && (
+                  {notSurePayoff && (
                     <span className="steps__not-sure-icon">
                       <CheckIcon />
                     </span>
@@ -114,25 +156,31 @@ export default function Step5({ data, onChange }) {
 
         {/* ── Card 3: Asking price ── */}
         <div className="steps__form-card" style={{ marginTop: "2rem" }}>
-          <p className="steps__field-label steps__field-label--lg">Asking price</p>
+          <p className="steps__field-label steps__field-label--lg">
+            Asking price
+          </p>
           <div className="steps__amount-row">
-            <div className={`steps__amount-input-wrap ${!data.notSurePrice && data.askingPrice ? "steps__amount-input-wrap--active" : ""} ${data.notSurePrice ? "steps__amount-input-wrap--disabled" : ""}`}>
+            <div
+              className={`steps__amount-input-wrap ${!notSurePrice && watch("askingPrice") ? "steps__amount-input-wrap--active" : ""} ${notSurePrice ? "steps__amount-input-wrap--disabled" : ""}`}
+            >
               <span className="steps__amount-dollar">$</span>
               <input
+                {...register("askingPrice")}
                 type="text"
                 className="steps__amount-input"
                 placeholder="Enter amount"
-                value={data.askingPrice || ""}
-                disabled={data.notSurePrice}
-                onChange={(e) => onChange({ askingPrice: e.target.value, notSurePrice: false })}
+                disabled={notSurePrice}
               />
             </div>
             <button
               type="button"
-              className={`steps__not-sure-btn ${data.notSurePrice ? "steps__not-sure-btn--active" : ""}`}
-              onClick={() => onChange({ notSurePrice: !data.notSurePrice, askingPrice: "" })}
+              className={`steps__not-sure-btn ${notSurePrice ? "steps__not-sure-btn--active" : ""}`}
+              onClick={() => {
+                setValue("notSurePrice", !notSurePrice);
+                setValue("askingPrice", "");
+              }}
             >
-              {data.notSurePrice && (
+              {notSurePrice && (
                 <span className="steps__not-sure-icon">
                   <CheckIcon />
                 </span>
@@ -141,7 +189,6 @@ export default function Step5({ data, onChange }) {
             </button>
           </div>
         </div>
-
       </div>
     </section>
   );

@@ -1,3 +1,5 @@
+import { useFormContext, Controller } from "react-hook-form";
+
 const MECHANICAL_RATINGS = [
   {
     stars: 5,
@@ -41,49 +43,73 @@ function Stars({ count }) {
   );
 }
 
-export default function Step4({ data, onChange, bikeLabel }) {
+export default function Step4() {
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
+
   return (
     <section className="steps__section">
-      <h1 className="steps__title">How would you rate the mechanical condition?</h1>
+      <h1 className="steps__title">
+        How would you rate the mechanical condition?
+      </h1>
       <p className="steps__subtitle">
         Engine, transmission, electronics, and how the bike runs overall.
       </p>
 
       <div className="steps__single-col">
-        <div className="steps__rating-list">
-          {MECHANICAL_RATINGS.map((r) => {
-            const isActive = data.mechanical === r.stars;
-            return (
-              <button
-                key={r.stars}
-                type="button"
-                className={`steps__rating-card ${isActive ? "steps__rating-card--active" : ""}`}
-                onClick={() => onChange({ mechanical: r.stars })}
-              >
-                <div className="steps__rating-content">
-                  <div className="steps__rating-header">
-                    <Stars count={r.stars} />
-                    <span className="steps__rating-title">{r.label}</span>
-                  </div>
-                  <span className="steps__rating-desc">{r.desc}</span>
-                </div>
-                <span className="steps__rating-radio">
-                  {isActive && (
-                    <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
-                      <polyline
-                        points="4,12 9,17 20,6"
-                        stroke="#fff"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <Controller
+          name="mechanical"
+          control={control}
+          rules={{ required: "Please select a mechanical condition rating" }}
+          render={({ field }) => (
+            <div className="steps__rating-list">
+              {MECHANICAL_RATINGS.map((r) => {
+                const isActive = field.value === r.stars;
+                return (
+                  <button
+                    key={r.stars}
+                    type="button"
+                    className={`steps__rating-card ${isActive ? "steps__rating-card--active" : ""}`}
+                    onClick={() => field.onChange(r.stars)}
+                  >
+                    <div className="steps__rating-content">
+                      <div className="steps__rating-header">
+                        <Stars count={r.stars} />
+                        <span className="steps__rating-title">{r.label}</span>
+                      </div>
+                      <span className="steps__rating-desc">{r.desc}</span>
+                    </div>
+                    <span className="steps__rating-radio">
+                      {isActive && (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          width="14"
+                          height="14"
+                        >
+                          <polyline
+                            points="4,12 9,17 20,6"
+                            stroke="#fff"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        />
+        {errors.mechanical && (
+          <p className="steps__field-error" style={{ marginTop: "0.5rem" }}>
+            {errors.mechanical.message}
+          </p>
+        )}
       </div>
     </section>
   );

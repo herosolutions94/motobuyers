@@ -1,12 +1,5 @@
 import { useRef } from "react";
-
-function CircleBox({ active }) {
-  return (
-    <span className="steps__radio-box">
-      {active && <span className="steps__radio-dot" />}
-    </span>
-  );
-}
+import { useFormContext } from "react-hook-form";
 
 const SERVICE_ITEMS = [
   "Valve adjustment or major service",
@@ -21,48 +14,50 @@ const CIRCLE_OPTIONS = [
   "Not sure",
 ];
 
-export default function Step4c({ data, onChange }) {
-  const selected = data.serviceItems || [];
-  const otherChecked = data.otherChecked || false;
-  const otherText = data.otherText || "";
-  const circleOption = data.circleOption || "";
+function CircleBox({ active }) {
+  return (
+    <span className="steps__radio-box">
+      {active && <span className="steps__radio-dot" />}
+    </span>
+  );
+}
+
+const CheckIcon = () => (
+  <svg viewBox="0 0 12 10" fill="none" width="12" height="10">
+    <polyline points="1,5 4.5,8.5 11,1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export default function Step4c() {
+  const { watch, setValue, formState: { errors } } = useFormContext();
   const inputRef = useRef(null);
+
+  const selected = watch("serviceItems") || [];
+  const otherChecked = watch("serviceOtherChecked") || false;
+  const otherText = watch("serviceOtherText") || "";
+  const circleOption = watch("serviceCircleOption") || "";
 
   const toggle = (item) => {
     const updated = selected.includes(item)
       ? selected.filter((i) => i !== item)
       : [...selected, item];
-    onChange({ serviceItems: updated, circleOption: "" });
+    setValue("serviceItems", updated);
+    setValue("serviceCircleOption", "");
   };
 
   const toggleOther = () => {
     const next = !otherChecked;
-    onChange({ otherChecked: next, circleOption: "" });
-    if (next) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
+    setValue("serviceOtherChecked", next);
+    setValue("serviceCircleOption", "");
+    if (next) setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const handleCircleOption = (option) => {
-    onChange({
-      serviceItems: [],
-      otherChecked: false,
-      otherText: "",
-      circleOption: circleOption === option ? "" : option,
-    });
+    setValue("serviceItems", []);
+    setValue("serviceOtherChecked", false);
+    setValue("serviceOtherText", "");
+    setValue("serviceCircleOption", circleOption === option ? "" : option);
   };
-
-  const CheckIcon = () => (
-    <svg viewBox="0 0 12 10" fill="none" width="12" height="10">
-      <polyline
-        points="1,5 4.5,8.5 11,1"
-        stroke="#fff"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 
   return (
     <section className="steps__section">
@@ -80,22 +75,18 @@ export default function Step4c({ data, onChange }) {
                   className={`steps__checkbox-row ${checked ? "steps__checkbox-row--active" : ""}`}
                   onClick={() => toggle(item)}
                 >
-                  <span className="steps__checkbox-box">
-                    {checked && <CheckIcon />}
-                  </span>
+                  <span className="steps__checkbox-box">{checked && <CheckIcon />}</span>
                   <span className="steps__checkbox-label">{item}</span>
                 </label>
               );
             })}
 
-            {/* Other — text input row */}
+            {/* Other row */}
             <label
               className={`steps__checkbox-row ${otherChecked ? "steps__checkbox-row--active" : ""}`}
               onClick={toggleOther}
             >
-              <span className="steps__checkbox-box">
-                {otherChecked && <CheckIcon />}
-              </span>
+              <span className="steps__checkbox-box">{otherChecked && <CheckIcon />}</span>
               {otherChecked ? (
                 <input
                   ref={inputRef}
@@ -104,7 +95,10 @@ export default function Step4c({ data, onChange }) {
                   placeholder="Describe the issue..."
                   value={otherText}
                   onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => onChange({ otherText: e.target.value, circleOption: "" })}
+                  onChange={(e) => {
+                    setValue("serviceOtherText", e.target.value);
+                    setValue("serviceCircleOption", "");
+                  }}
                 />
               ) : (
                 <span className="steps__checkbox-label">Other</span>
@@ -133,6 +127,12 @@ export default function Step4c({ data, onChange }) {
               );
             })}
           </div>
+
+          {errors.serviceItems && (
+            <p className="steps__field-error" style={{ marginTop: "0.75rem" }}>
+              {errors.serviceItems.message}
+            </p>
+          )}
         </div>
       </div>
     </section>
