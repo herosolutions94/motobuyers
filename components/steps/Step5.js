@@ -129,8 +129,15 @@ export default function Step5() {
                   <input
                     {...register("payoffAmount")}
                     type="text"
+                    inputMode="numeric"
                     className="steps__amount-input"
                     placeholder="Enter amount"
+                    onChange={(e) => {
+                      const onlyNumbers = e.target.value.replace(/[^0-9]/g, "");
+                      setValue("payoffAmount", onlyNumbers, {
+                        shouldValidate: true,
+                      });
+                    }}
                     disabled={notSurePayoff}
                   />
                 </div>
@@ -167,8 +174,15 @@ export default function Step5() {
               <input
                 {...register("askingPrice")}
                 type="text"
+                inputMode="numeric"
                 className="steps__amount-input"
                 placeholder="Enter amount"
+                onChange={(e) => {
+                  const onlyNumbers = e.target.value.replace(/[^0-9]/g, "");
+                  setValue("askingPrice", onlyNumbers, {
+                    shouldValidate: true,
+                  });
+                }}
                 disabled={notSurePrice}
               />
             </div>

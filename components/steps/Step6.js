@@ -17,18 +17,18 @@ export default function Step6() {
       <div className="steps__single-col">
         <div className="steps__form-card">
           <div className="steps__contact-field">
-            <label className="steps__field-label !mb-[0]">First Name</label>
+            <label className="steps__field-label !mb-[0]">Full Name</label>
             <input
               {...register("firstName", {
-                required: "Please enter your first name",
+                required: "Please enter your full name",
                 minLength: {
-                  value: 2,
-                  message: "Name must be at least 2 characters",
+                  value: 3,
+                  message: "Name must be at least 3 characters",
                 },
               })}
               type="text"
               className={`steps__input steps__input--rect${errors.firstName ? " steps__input--error" : ""}`}
-              placeholder="Enter your first name"
+              placeholder="Enter your full name"
             />
             {errors.firstName && (
               <p className="steps__field-error">{errors.firstName.message}</p>

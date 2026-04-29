@@ -39,10 +39,17 @@ function TireCard({ label, value, unknown, onSlide, onToggleUnknown }) {
         {unknown ? (
           <span className="steps__tire-unknown">Unknown</span>
         ) : value > 0 ? (
-          <span className="steps__tire-value">{value.toLocaleString()} mi</span>
+          <span className="steps__tire-value">
+            {value >= MAX
+              ? `${MAX.toLocaleString()}+ mi`
+              : `${value.toLocaleString()} mi`}
+          </span>
+
         ) : (
           <span className="steps__tire-slide-hint">Slide to set range</span>
         )}
+        {/* value > 0 ? (<span className="steps__tire-value">{value.toLocaleString()} mi</span> */}
+
       </div>
 
       <div className="steps__tire-card-slider">
