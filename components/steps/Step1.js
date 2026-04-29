@@ -315,7 +315,7 @@ export default function Step1() {
     (yearValue === "before-2003" || parseInt(yearValue, 10) < 2003);
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title">Let&apos;s start with your motorcycle</h1>
       <p className="steps__subtitle">
         Use your VIN for the fastest path, or enter the year and make if you do not have it nearby.
@@ -521,6 +521,6 @@ export default function Step1() {
 
       {showVinError && <VinErrorModal onClose={() => setShowVinError(false)} />}
       {showVinHelp && <VinHelpModal onClose={() => setShowVinHelp(false)} />}
-    </section>
+    </div>
   );
 }

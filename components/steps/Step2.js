@@ -11,7 +11,7 @@ export default function Step2() {
   const ridden = watch("ridden");
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title">Tell us a bit more about your bike</h1>
 
       <div className="steps__single-col">
@@ -183,6 +183,6 @@ export default function Step2() {
           )}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

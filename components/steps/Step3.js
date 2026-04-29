@@ -50,7 +50,7 @@ export default function Step3() {
   } = useFormContext();
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title">
         How would you rate the cosmetic condition?
       </h1>
@@ -108,6 +108,6 @@ export default function Step3() {
           </p>
         )}
       </div>
-    </section>
+    </div>
   );
 }

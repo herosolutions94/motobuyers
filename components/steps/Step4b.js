@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 
 const MECHANICAL_ISSUES = [
@@ -20,6 +20,8 @@ const CheckIcon = () => (
 export default function Step4b() {
   const { watch, setValue, formState: { errors } } = useFormContext();
   const inputRef = useRef(null);
+  const [overflowAt, setOverflowAt] = useState(null);
+  const isExpanded = overflowAt !== null;
 
   const selected = watch("mechanicalIssues") || [];
   const otherChecked = watch("mechOtherChecked") || false;
@@ -38,6 +40,7 @@ export default function Step4b() {
     const next = !otherChecked;
     setValue("mechOtherChecked", next);
     setValue("mechNoIssues", false);
+    if (!next) setOverflowAt(null);
     if (next) setTimeout(() => inputRef.current?.focus(), 50);
   };
 
@@ -46,10 +49,11 @@ export default function Step4b() {
     setValue("mechOtherChecked", false);
     setValue("mechOtherText", "");
     setValue("mechNoIssues", true);
+    setOverflowAt(null);
   };
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title">What mechanical issues are you aware of?</h1>
       <p className="steps__subtitle">Select all that apply.</p>
 
@@ -76,18 +80,37 @@ export default function Step4b() {
           >
             <span className="steps__checkbox-box">{otherChecked && <CheckIcon />}</span>
             {otherChecked ? (
-              <input
-                ref={inputRef}
-                type="text"
-                className="steps__checkbox-other-input"
-                placeholder="Describe the issue..."
-                value={otherText}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  setValue("mechOtherText", e.target.value);
-                  setValue("mechNoIssues", false);
-                }}
-              />
+              isExpanded ? (
+                <textarea
+                  ref={inputRef}
+                  className="steps__checkbox-other-input"
+                  placeholder="Describe the issue..."
+                  value={otherText}
+                  rows={4}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    setValue("mechOtherText", e.target.value);
+                    setValue("mechNoIssues", false);
+                    if (e.target.value.length < overflowAt) setOverflowAt(null);
+                  }}
+                />
+              ) : (
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="steps__checkbox-other-input"
+                  placeholder="Describe the issue..."
+                  value={otherText}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    setValue("mechOtherText", e.target.value);
+                    setValue("mechNoIssues", false);
+                    if (inputRef.current && inputRef.current.scrollWidth > inputRef.current.clientWidth) {
+                      setOverflowAt(e.target.value.length);
+                    }
+                  }}
+                />
+              )
             ) : (
               <span className="steps__checkbox-label">Other</span>
             )}
@@ -116,6 +139,6 @@ export default function Step4b() {
           </p>
         )}
       </div>
-    </section>
+    </div>
   );
 }

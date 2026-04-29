@@ -50,7 +50,7 @@ export default function Step4() {
   } = useFormContext();
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title">
         How would you rate the mechanical condition?
       </h1>
@@ -111,6 +111,6 @@ export default function Step4() {
           </p>
         )}
       </div>
-    </section>
+    </div>
   );
 }

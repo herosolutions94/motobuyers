@@ -28,7 +28,7 @@ export default function Step5b() {
   };
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title">Add photos of your motorcycle</h1>
       <p className="steps__subtitle">
         Our data shows that photos improve offer accuracy by up to 25%.
@@ -97,6 +97,6 @@ export default function Step5b() {
           </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }

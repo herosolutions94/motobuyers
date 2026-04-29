@@ -82,7 +82,7 @@ export default function Step4d() {
   const rearUnknown = watch("rearTireNotSure") ?? false;
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title">
         About how many miles are on the current tires?
       </h1>
@@ -106,6 +106,6 @@ export default function Step4d() {
           onToggleUnknown={() => setValue("rearTireNotSure", !rearUnknown)}
         />
       </div>
-    </section>
+    </div>
   );
 }

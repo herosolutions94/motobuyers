@@ -20,18 +20,18 @@ import { HERO_PREFILL_KEY } from "../components/HeroSection";
 
 // ─── Step IDs ────────────────────────────────────────────────────────────────
 const STEP_IDS = [
-  "bike-id",        // 1
-  "vehicle-details",// 2
-  "cosmetic-rating",// 3
-  "cosmetic-issues",// 3A  — skipped if cosmetic === 5
-  "mech-rating",    // 4
-  "mech-issues",    // 4B  — skipped if mechanical === 5
-  "service-maint",  // 4C  — always shown
-  "tire-mileage",   // 4D  — skipped if mileage < 1000
-  "title-financial",// 5
-  "photos",         // 6
+  "bike-id", // 1
+  "vehicle-details", // 2
+  "cosmetic-rating", // 3
+  "cosmetic-issues", // 3A  — skipped if cosmetic === 5
+  "mech-rating", // 4
+  "mech-issues", // 4B  — skipped if mechanical === 5
+  "service-maint", // 4C  — always shown
+  "tire-mileage", // 4D  — skipped if mileage < 1000
+  "title-financial", // 5
+  "photos", // 6
   "contact-submit", // 7
-  "thank-you",      // 8
+  "thank-you", // 8
 ];
 
 // ─── Dynamic sequence builder ────────────────────────────────────────────────
@@ -60,7 +60,7 @@ const PROGRESS_MAP = {
   "service-maint": 63,
   "tire-mileage": 72,
   "title-financial": 81,
-  "photos": 88,
+  photos: 88,
   "contact-submit": 94,
   "thank-you": 100,
 };
@@ -75,8 +75,8 @@ export default function StepsPage() {
       vehicleIdentified: "",
       year: "",
       make: "",
-      vinModel: "",   // model from VIN path (pre-filled, editable)
-      model: "",      // model from Year & Make path (free-text, required)
+      vinModel: "", // model from VIN path (pre-filled, editable)
+      model: "", // model from Year & Make path (free-text, required)
       customMake: "", // free-text make when "Other" is selected
       // Step 2
       mileage: "",
@@ -162,7 +162,7 @@ export default function StepsPage() {
     } catch {
       // Silently ignore parse errors
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const currentStepId = sequence[currentIndex];
   const progress = PROGRESS_MAP[currentStepId] ?? 0;
@@ -188,11 +188,15 @@ export default function StepsPage() {
     "cosmetic-issues": () => {
       const vals = methods.getValues();
       const hasSelection =
-        (vals.cosmeticIssues?.length > 0) ||
+        vals.cosmeticIssues?.length > 0 ||
         vals.cosmeticOtherChecked ||
         vals.noIssues;
       if (!hasSelection) {
-        methods.setError("cosmeticIssues", { type: "manual", message: "Please select at least one option or choose 'No cosmetic issues'" });
+        methods.setError("cosmeticIssues", {
+          type: "manual",
+          message:
+            "Please select at least one option or choose 'No cosmetic issues'",
+        });
         return false;
       }
       methods.clearErrors("cosmeticIssues");
@@ -203,11 +207,15 @@ export default function StepsPage() {
     "mech-issues": () => {
       const vals = methods.getValues();
       const hasSelection =
-        (vals.mechanicalIssues?.length > 0) ||
+        vals.mechanicalIssues?.length > 0 ||
         vals.mechOtherChecked ||
         vals.mechNoIssues;
       if (!hasSelection) {
-        methods.setError("mechanicalIssues", { type: "manual", message: "Please select at least one option or choose 'No mechanical issues'" });
+        methods.setError("mechanicalIssues", {
+          type: "manual",
+          message:
+            "Please select at least one option or choose 'No mechanical issues'",
+        });
         return false;
       }
       methods.clearErrors("mechanicalIssues");
@@ -217,11 +225,14 @@ export default function StepsPage() {
     "service-maint": () => {
       const vals = methods.getValues();
       const hasSelection =
-        (vals.serviceItems?.length > 0) ||
+        vals.serviceItems?.length > 0 ||
         vals.serviceOtherChecked ||
         vals.serviceCircleOption;
       if (!hasSelection) {
-        methods.setError("serviceItems", { type: "manual", message: "Please select at least one option" });
+        methods.setError("serviceItems", {
+          type: "manual",
+          message: "Please select at least one option",
+        });
         return false;
       }
       methods.clearErrors("serviceItems");
@@ -229,7 +240,7 @@ export default function StepsPage() {
     },
     "tire-mileage": () => true,
     "title-financial": () => trigger(["titleType", "hasLoan"]),
-    "photos": () => true,
+    photos: () => true,
     "contact-submit": () => trigger(["firstName", "phone", "contactEmail"]),
     "thank-you": () => true,
   };
@@ -287,7 +298,9 @@ export default function StepsPage() {
   const hasPhotos = (allValues.photos || []).length > 0;
 
   const continueBtnLabel = isPhotosStep
-    ? hasPhotos ? "Continue" : "Skip for now"
+    ? hasPhotos
+      ? "Continue"
+      : "Skip for now"
     : isSubmitStep
       ? "Submit for Appraisal"
       : "Continue";
@@ -297,7 +310,10 @@ export default function StepsPage() {
       <Head>
         <title>Get My Offer – MotoBuyers</title>
 
-        <meta name="description" content="A simple process. A real offer. A smooth ride to instant cash." />
+        <meta
+          name="description"
+          content="A simple process. A real offer. A smooth ride to instant cash."
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
           rel="stylesheet"
@@ -308,28 +324,48 @@ export default function StepsPage() {
         <div className="steps__progress-bar">
           <Contain>
             <div className="steps__progress-track">
-              <div className="steps__progress-fill" style={{ width: `${progress}%` }} />
-              <div className="steps__progress-bike" style={{ left: `${progress}%` }}>
-                <img src="/images/sakootar.png" alt="motorcycle" />
+              <div
+                className="steps__progress-fill"
+                style={{ width: `${progress}%` }}
+              />
+              <div
+                className="steps__progress-bike"
+                style={{ left: `${progress}%` }}
+              >
+                {/* <img src="/images/sakootar.png" alt="motorcycle" /> */}
               </div>
             </div>
           </Contain>
         </div>
 
         {/* Step Content */}
-        <Contain>
+        <Contain className="!z-[auto]">
           {currentStepId === "bike-id" && <Step1 bikeLabel={bikeLabel} />}
-          {currentStepId === "vehicle-details" && <Step2 bikeLabel={bikeLabel} />}
-          {currentStepId === "cosmetic-rating" && <Step3 bikeLabel={bikeLabel} />}
-          {currentStepId === "cosmetic-issues" && <Step3b bikeLabel={bikeLabel} />}
+          {currentStepId === "vehicle-details" && (
+            <Step2 bikeLabel={bikeLabel} />
+          )}
+          {currentStepId === "cosmetic-rating" && (
+            <Step3 bikeLabel={bikeLabel} />
+          )}
+          {currentStepId === "cosmetic-issues" && (
+            <Step3b bikeLabel={bikeLabel} />
+          )}
           {currentStepId === "mech-rating" && <Step4 bikeLabel={bikeLabel} />}
           {currentStepId === "mech-issues" && <Step4b bikeLabel={bikeLabel} />}
-          {currentStepId === "service-maint" && <Step4c bikeLabel={bikeLabel} />}
+          {currentStepId === "service-maint" && (
+            <Step4c bikeLabel={bikeLabel} />
+          )}
           {currentStepId === "tire-mileage" && <Step4d bikeLabel={bikeLabel} />}
-          {currentStepId === "title-financial" && <Step5 bikeLabel={bikeLabel} />}
+          {currentStepId === "title-financial" && (
+            <Step5 bikeLabel={bikeLabel} />
+          )}
           {currentStepId === "photos" && <Step5b />}
-          {currentStepId === "contact-submit" && <Step6 bikeLabel={bikeLabel} />}
-          {currentStepId === "thank-you" && <Step7 bikeLabel={bikeLabel} firstName={allValues.firstName} />}
+          {currentStepId === "contact-submit" && (
+            <Step6 bikeLabel={bikeLabel} />
+          )}
+          {currentStepId === "thank-you" && (
+            <Step7 bikeLabel={bikeLabel} firstName={allValues.firstName} />
+          )}
         </Contain>
 
         {/* Footer Nav */}
@@ -338,9 +374,19 @@ export default function StepsPage() {
             <Contain>
               <div className="steps__footer-nav-inner">
                 {currentIndex > 0 ? (
-                  <button className="steps__btn-back" onClick={goBack} aria-label="Back">
+                  <button
+                    className="steps__btn-back"
+                    onClick={goBack}
+                    aria-label="Back"
+                  >
                     <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
-                      <path d="M15 18l-6-6 6-6" stroke="#231f20" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M15 18l-6-6 6-6"
+                        stroke="#231f20"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </button>
                 ) : (
@@ -350,13 +396,18 @@ export default function StepsPage() {
                   className="steps__btn-continue"
                   onClick={handleContinue}
                   disabled={submitting}
-                  style={submitting ? { opacity: 0.7, cursor: "not-allowed" } : {}}
+                  style={
+                    submitting ? { opacity: 0.7, cursor: "not-allowed" } : {}
+                  }
                 >
                   {submitting ? "Submitting…" : continueBtnLabel}
                 </button>
               </div>
               {submitError && (
-                <p className="steps__field-error" style={{ textAlign: "center", marginTop: "0.75rem" }}>
+                <p
+                  className="steps__field-error"
+                  style={{ textAlign: "center", marginTop: "0.75rem" }}
+                >
                   {submitError}
                 </p>
               )}

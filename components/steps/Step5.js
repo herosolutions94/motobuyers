@@ -45,7 +45,7 @@ export default function Step5() {
   const showLoan = hasLoan === "yes";
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title">Title and financial details</h1>
 
       <div className="steps__single-col">
@@ -149,11 +149,11 @@ export default function Step5() {
                     setValue("payoffAmount", "");
                   }}
                 >
-                  {notSurePayoff && (
-                    <span className="steps__not-sure-icon">
+                  <span className={`steps__not-sure-icon ${notSurePayoff ? "steps__not-sure-icon--active" : ""}`}>
+                    {notSurePayoff && (
                       <CheckIcon />
-                    </span>
-                  )}
+                    )}
+                  </span>
                   Not sure
                 </button>
               </div>
@@ -194,16 +194,16 @@ export default function Step5() {
                 setValue("askingPrice", "");
               }}
             >
-              {notSurePrice && (
-                <span className="steps__not-sure-icon">
+              <span className={`steps__not-sure-icon ${notSurePrice ? "steps__not-sure-icon--active" : ""}`}>
+                {notSurePrice && (
                   <CheckIcon />
-                </span>
-              )}
+                )}
+              </span>
               Not sure
             </button>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useFormContext, Controller } from "react-hook-form";
 
 const COSMETIC_ISSUES = [
@@ -17,6 +17,8 @@ const CheckIcon = () => (
 export default function Step3b() {
   const { watch, setValue, formState: { errors } } = useFormContext();
   const inputRef = useRef(null);
+  const [overflowAt, setOverflowAt] = useState(null);
+  const isExpanded = overflowAt !== null;
 
   const selected = watch("cosmeticIssues") || [];
   const otherChecked = watch("cosmeticOtherChecked") || false;
@@ -35,6 +37,7 @@ export default function Step3b() {
     const next = !otherChecked;
     setValue("cosmeticOtherChecked", next);
     setValue("noIssues", false);
+    if (!next) setOverflowAt(null);
     if (next) setTimeout(() => inputRef.current?.focus(), 50);
   };
 
@@ -43,10 +46,11 @@ export default function Step3b() {
     setValue("cosmeticOtherChecked", false);
     setValue("cosmeticOtherText", "");
     setValue("noIssues", true);
+    setOverflowAt(null);
   };
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title">What cosmetic issues should we know about?</h1>
       <p className="steps__subtitle">Select all that apply, or let us know if none of these fit.</p>
 
@@ -73,18 +77,37 @@ export default function Step3b() {
           >
             <span className="steps__checkbox-box">{otherChecked && <CheckIcon />}</span>
             {otherChecked ? (
-              <input
-                ref={inputRef}
-                type="text"
-                className="steps__checkbox-other-input"
-                placeholder="Describe the issue..."
-                value={otherText}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  setValue("cosmeticOtherText", e.target.value);
-                  setValue("noIssues", false);
-                }}
-              />
+              isExpanded ? (
+                <textarea
+                  ref={inputRef}
+                  className="steps__checkbox-other-input"
+                  placeholder="Describe the issue..."
+                  value={otherText}
+                  rows={4}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    setValue("cosmeticOtherText", e.target.value);
+                    setValue("noIssues", false);
+                    if (e.target.value.length < overflowAt) setOverflowAt(null);
+                  }}
+                />
+              ) : (
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="steps__checkbox-other-input"
+                  placeholder="Describe the issue..."
+                  value={otherText}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    setValue("cosmeticOtherText", e.target.value);
+                    setValue("noIssues", false);
+                    if (inputRef.current && inputRef.current.scrollWidth > inputRef.current.clientWidth) {
+                      setOverflowAt(e.target.value.length);
+                    }
+                  }}
+                />
+              )
             ) : (
               <span className="steps__checkbox-label">Other</span>
             )}
@@ -113,6 +136,6 @@ export default function Step3b() {
           </p>
         )}
       </div>
-    </section>
+    </div>
   );
 }

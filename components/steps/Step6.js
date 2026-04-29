@@ -8,7 +8,7 @@ export default function Step6() {
   } = useFormContext();
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title">How can we reach you?</h1>
       <p className="steps__subtitle">
         We will use this information to follow up with your appraisal.
@@ -91,6 +91,6 @@ export default function Step6() {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

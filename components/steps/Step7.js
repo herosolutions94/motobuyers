@@ -1,23 +1,41 @@
 const NEXT_STEPS = [
-  { num: 1, title: "Review", desc: "One of our appraisers will carefully review your submission." },
-  { num: 2, title: "Receive Your Offer", desc: "We'll send you a no-hassle, fair-market offer based on your bike's condition and local demand." },
-  { num: 3, title: "Ask Questions or Schedule Pickup", desc: "You can chat with us, ask questions, or schedule an in-person appointment." },
-  { num: 4, title: "Get Paid", desc: "Accept the offer, hand off the keys, and get paid — it's that simple." },
+  {
+    num: 1,
+    title: "Review",
+    desc: "Our team reviews the information and any photos you uploaded.",
+  },
+  {
+    num: 2,
+    title: "Reach out",
+    desc: "We contact you if we need anything else to finish the appraisal.",
+  },
+  {
+    num: 3,
+    title: "Offer",
+    desc: "You receive an offer and can decide if you want to move forward.",
+  },
+  {
+    num: 4,
+    title: "Schedule",
+    desc: "If it is a fit, we coordinate the next step and paperwork.",
+  },
 ];
 
 export default function Step7({ bikeLabel, firstName }) {
   const name = firstName ? firstName.trim() : "";
 
   return (
-    <section className="steps__section">
+    <div className="steps__section">
       <h1 className="steps__title steps__title--italic">
-        {name
-          ? <>Thank you, {name} &mdash; we&apos;ve got everything we need!</>
-          : <>Thanks &mdash; we&apos;ve got everything we need!</>
-        }
+        {name ? (
+          <>Thank you, {name} &mdash; we&apos;ve got everything we need!</>
+        ) : (
+          <>Thanks &mdash; we&apos;ve got everything we need!</>
+        )}
       </h1>
       <p className="steps__subtitle">
-        Showing: <strong>{bikeLabel}</strong>
+        {/* Showing: <strong>{bikeLabel}</strong> */}
+        Your motorcycle details have been submitted.
       </p>
 
       <div className="steps__single-col">
@@ -35,14 +53,16 @@ export default function Step7({ bikeLabel, firstName }) {
           </ol>
 
           <div className="steps__confirm-note">
-            <span className="steps__confirm-note-icon">&#9203;</span>
+            {/* <span className="steps__confirm-note-icon">&#9203;</span> */}
             <div>
-              <strong>Most offers are sent within 1 business day.</strong>
-              <p>Submissions received after 6pm may be reviewed the next morning.</p>
+              <p>
+                Need help right away? Contact MotoBuyers support and include
+                your phone number so we can find your submission quickly.
+              </p>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
