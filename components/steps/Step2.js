@@ -31,9 +31,57 @@ export default function Step2() {
                 },
               })}
               type="text"
+              inputMode="numeric"
               className={`steps__input steps__input--suffix${errors.mileage ? " steps__input--error" : ""}`}
               placeholder="Enter mileage"
+              onChange={(e) => {
+                let raw = e.target.value.replace(/[^0-9]/g, "");
+                if (!raw) {
+                  setValue("mileage", "", { shouldValidate: true });
+                  return;
+                }
+
+                // commas format
+                const formatted = new Intl.NumberFormat().format(raw);
+
+                setValue("mileage", formatted, { shouldValidate: true });
+              }}
             />
+
+            {/* <input
+              {...register("mileage", {
+                required: "Please enter the mileage",
+                validate: (v) => {
+                  const num = parseInt(v, 10);
+                  return (
+                    (!isNaN(num) && num >= 0) || "Please enter a valid mileage"
+                  );
+                },
+              })}
+              type="text"
+              inputMode="numeric"
+              className={`steps__input steps__input--suffix${errors.mileage ? " steps__input--error" : ""}`}
+              placeholder="Enter mileage"
+              onChange={(e) => {
+                const onlyNumbers = e.target.value.replace(/[^0-9]/g, "");
+                setValue("mileage", onlyNumbers, { shouldValidate: true });
+              }}
+            /> */}
+            {/* phly */}
+            {/* <input
+              {...register("mileage", {
+                required: "Please enter the mileage",
+                validate: (v) => {
+                  const num = parseInt(String(v).replace(/,/g, ""), 10);
+                  return (
+                    (!isNaN(num) && num >= 0) || "Please enter a valid mileage"
+                  );
+                },
+              })}
+              type="number"
+              className={`steps__input steps__input--suffix${errors.mileage ? " steps__input--error" : ""}`}
+              placeholder="Enter mileage"
+            /> */}
             <span className="steps__input-suffix">miles</span>
           </div>
           {errors.mileage && (
@@ -47,6 +95,28 @@ export default function Step2() {
           <input
             {...register("zip", {
               required: "Please enter your ZIP code",
+              // minLength: {
+              //   value: 5,
+              //   message: "ZIP code must be 5 digits",
+              // },
+              // maxLength: {
+              //   value: 9,
+              //   message: "ZIP code cannot exceed 9 digits",
+              // },
+            })}
+            type="text"
+            inputMode="numeric"
+            className={`steps__input${errors.zip ? " steps__input--error" : ""}`}
+            placeholder="Enter Zip code"
+            maxLength={5}
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^0-9]/g, "");
+              setValue("zip", value, { shouldValidate: true });
+            }}
+          />
+          {/* <input
+            {...register("zip", {
+              required: "Please enter your ZIP code",
               pattern: {
                 value: /^\d{5}(-\d{4})?$/,
                 message: "Please enter a valid ZIP code",
@@ -56,7 +126,7 @@ export default function Step2() {
             className={`steps__input${errors.zip ? " steps__input--error" : ""}`}
             placeholder="Enter Zip code"
             maxLength={10}
-          />
+          /> */}
           {errors.zip && (
             <p className="steps__field-error">{errors.zip.message}</p>
           )}

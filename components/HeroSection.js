@@ -5,7 +5,7 @@ import Contain from "./contain";
 import Heading from "./heading";
 import Paragraph from "./paragraph";
 
-// ─── Custom Select (same pattern as steps) ───────────────────────────────────
+// ─── Custom Select ────────────────────────────────────────────────────────────
 function CustomSelect({ value, onChange, options, placeholder }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -88,13 +88,7 @@ function CustomSelect({ value, onChange, options, placeholder }) {
   );
 }
 
-// ─── Data (mirrors Step1 exactly) ────────────────────────────────────────────
-// const YEAR_OPTIONS = [
-//   ...Array.from({ length: 23 }, (_, i) => 2025 - i),
-//   { separator: true },
-//   { value: "before-2003", label: "Before 2003", italic: true },
-// ];
-
+// ─── Data ─────────────────────────────────────────────────────────────────────
 const CURRENT_YEAR = new Date().getFullYear();
 const MIN_YEAR = 2003;
 
@@ -108,14 +102,19 @@ const YEAR_OPTIONS = [
 ];
 
 const MAKE_OPTIONS = [
+  "Aprilia",
   "BMW",
-  "Can-Am",
+  "CFMOTO",
   "Ducati",
   "Harley-Davidson",
   "Honda",
+  "Husqvarna",
   "Indian",
   "Kawasaki",
   "KTM",
+  "Moto Guzzi",
+  "Moto Morini",
+  "MV Agusta",
   "Royal Enfield",
   "Suzuki",
   "Triumph",
@@ -126,7 +125,7 @@ const MAKE_OPTIONS = [
   { value: "other", label: "Other", italic: true },
 ];
 
-// ─── NHTSA VIN decode ────────────────────────────────────────────────────────
+// ─── NHTSA VIN decode ──────────────────────────────────────────────────────────
 async function decodeVin(vin) {
   const res = await fetch(
     `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValuesExtended/${vin}?format=json`,
@@ -136,18 +135,31 @@ async function decodeVin(vin) {
   const r = data.Results?.[0] ?? {};
   return {
     year: r.ModelYear || "",
-    make: r.Make
-      ? r.Make.charAt(0).toUpperCase() + r.Make.slice(1).toUpperCase()
-      : "",
+    make: r.Make || "", // return raw — matchMakeToOption handles casing
     model: r.Model || "",
   };
+}
+
+// Match raw API make string (e.g. "HARLEY-DAVIDSON") to the exact
+// option value in MAKE_OPTIONS using a case-insensitive comparison.
+// Returns the matched option string, or "other" if no match found.
+function matchMakeToOption(rawMake) {
+  if (!rawMake) return "";
+  const normalized = rawMake.trim().toLowerCase();
+  const match = MAKE_OPTIONS.find((o) => {
+    if (!o || o.separator) return false;
+    const v = String(o?.value ?? o);
+    return v.toLowerCase() === normalized;
+  });
+  if (match) return String(match?.value ?? match);
+  return "other"; // unrecognized make → show "Enter Make" text input
 }
 
 function isValidVin(vin) {
   return /^[A-HJ-NPR-Z0-9]{17}$/i.test(vin);
 }
 
-// ─── Modals ───────────────────────────────────────────────────────────────────
+// ─── VinHelpModal ─────────────────────────────────────────────────────────────
 function VinHelpModal({ onClose }) {
   return (
     <div className="steps__modal-overlay" onClick={onClose}>
@@ -217,16 +229,14 @@ function VinHelpModal({ onClose }) {
   );
 }
 
-// ─── Unsupported Year Banner ──────────────────────────────────────────────────
+// ─── UnsupportedYearBanner ────────────────────────────────────────────────────
 function UnsupportedYearBanner() {
   return (
     <div className="steps__unsupported-banner">
       <p className="steps__unsupported-label">OUTSIDE OUR CURRENT RANGE</p>
-
       <h3 className="steps__unsupported-heading">
         We are not currently buying motorcycles from before 2003.
       </h3>
-
       <p className="steps__unsupported-desc">
         We are sorry, and we really appreciate your interest in MotoBuyers. If
         you would like to check another motorcycle, you can start over below.
@@ -234,25 +244,8 @@ function UnsupportedYearBanner() {
     </div>
   );
 }
-// function UnsupportedYearBanner() {
-//   return (
-//     <div className="steps__unsupported-banner" style={{ marginTop: "1rem" }}>
-//       <div className="steps__unsupported-icon">
-//         <svg viewBox="0 0 24 24" fill="none" width="24" height="24">
-//           <circle cx="12" cy="12" r="10" stroke="var(--color-red)" strokeWidth="2" />
-//           <line x1="12" y1="7" x2="12" y2="13" stroke="var(--color-red)" strokeWidth="2.2" strokeLinecap="round" />
-//           <circle cx="12" cy="17" r="1.2" fill="var(--color-red)" />
-//         </svg>
-//       </div>
-//       <div>
-//         <p className="steps__unsupported-title">We currently only buy motorcycles from 2003 or newer.</p>
-//         <p className="steps__unsupported-desc">Unfortunately we can&apos;t make an offer on this bike at this time.</p>
-//       </div>
-//     </div>
-//   );
-// }
 
-// ─── SESSION STORAGE KEY ─────────────────────────────────────────────────────
+// ─── SESSION STORAGE KEY ──────────────────────────────────────────────────────
 export const HERO_PREFILL_KEY = "motobuyers_step1_prefill";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -261,7 +254,12 @@ export default function HeroSection() {
   const [activeTab, setActiveTab] = useState("vin");
   const [showVinHelp, setShowVinHelp] = useState(false);
   const [formError, setFormError] = useState("");
-
+  const [errors, setErrors] = useState({
+    year: "",
+    make: "",
+    model: "",
+    customMake: "",
+  });
   // VIN path state
   const [vinValue, setVinValue] = useState("");
   const [vinDecoding, setVinDecoding] = useState(false);
@@ -278,13 +276,14 @@ export default function HeroSection() {
   // Year & Make path state
   const [year, setYear] = useState("");
   const [make, setMake] = useState("");
+  const [customMake, setCustomMake] = useState("");
   const [model, setModel] = useState("");
 
   const vinValid = isValidVin(vinValue);
   const isUnsupportedYear =
     year && (year === "before-2003" || parseInt(year, 10) < 2003);
 
-  // ── Auto-decode VIN when it becomes valid ──────────────────────────────────
+  // ── Auto-decode VIN ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!vinValid || vinValue === lastDecodedVin.current) return;
 
@@ -296,7 +295,13 @@ export default function HeroSection() {
 
     decodeVin(vinValue)
       .then(({ year, make, model }) => {
-        const identified = [year, make, model].filter(Boolean).join(" ");
+        // Match raw API make (e.g. "HARLEY-DAVIDSON") to dropdown option
+        const matchedMake = matchMakeToOption(make);
+        // For vehicleIdentified display, use the matched label or raw make
+        const displayMake =
+          matchedMake && matchedMake !== "other" ? matchedMake : make;
+        // vehicleIdentified = year + make only — model has its own field
+        const identified = [year, displayMake].filter(Boolean).join(" ");
         if (!identified) {
           setVinDecodeError(
             "VIN not recognized. Try switching to Year and Make.",
@@ -306,10 +311,19 @@ export default function HeroSection() {
         }
         setVinDecoded({
           year,
-          make,
+          make: matchedMake,
           vinModel: model,
           vehicleIdentified: identified,
         });
+        // Pre-fill Year & Make tab fields
+        setYear(year);
+        setMake(matchedMake);
+        // If make didn't match any option, pre-fill the free-text field with raw value
+        if (matchedMake === "other") {
+          setCustomMake(make);
+        } else {
+          setCustomMake("");
+        }
         setVinDecodeError("");
         setVinDecodeSuccess(true);
       })
@@ -322,26 +336,33 @@ export default function HeroSection() {
       .finally(() => setVinDecoding(false));
   }, [vinValid, vinValue]);
 
-  // ── Handle GET YOUR OFFER click ────────────────────────────────────────────
+  // ── Handle GET YOUR OFFER ──────────────────────────────────────────────────
   const handleSubmit = () => {
-    setFormError("");
+    const newErrors = {
+      year: "",
+      make: "",
+      model: "",
+      customMake: "",
+    };
 
     if (activeTab === "vin") {
-      // Must have a valid VIN that decoded successfully
       if (!vinValid) {
-        setFormError("Please enter a valid 17-character VIN.");
-        return;
-      }
-      if (vinDecoding) {
-        setFormError("Please wait — decoding your VIN.");
-        return;
-      }
-      if (!vinDecodeSuccess) {
-        setFormError("VIN not recognized. Try switching to Year and Make.");
+        setVinDecodeError("Please enter a valid 17-character VIN.");
         return;
       }
 
-      // Write prefill to sessionStorage and navigate
+      if (vinDecoding) {
+        setVinDecodeError("Please wait — decoding your VIN.");
+        return;
+      }
+
+      if (!vinDecodeSuccess) {
+        setVinDecodeError(
+          "VIN not recognized. Try switching to Year and Make.",
+        );
+        return;
+      }
+
       sessionStorage.setItem(
         HERO_PREFILL_KEY,
         JSON.stringify({
@@ -354,21 +375,29 @@ export default function HeroSection() {
         }),
       );
     } else {
-      // Year & Make path — all three required, year must be supported
       if (!year) {
-        setFormError("Please select a year.");
-        return;
+        newErrors.year = "Please select a year.";
       }
+
       if (isUnsupportedYear) {
-        setFormError("We only accept motorcycles from 2003 or newer.");
-        return;
+        newErrors.year = "We only accept motorcycles from 2003 or newer.";
       }
+
       if (!make) {
-        setFormError("Please select a make.");
-        return;
+        newErrors.make = "Please select a make.";
       }
+
+      if (make === "other" && !customMake.trim()) {
+        newErrors.customMake = "Please enter the make.";
+      }
+
       if (!model.trim()) {
-        setFormError("Please enter the model.");
+        newErrors.model = "Please enter the model.";
+      }
+
+      // ❗ agar koi error hai to stop
+      if (Object.values(newErrors).some((e) => e)) {
+        setErrors(newErrors);
         return;
       }
 
@@ -378,13 +407,79 @@ export default function HeroSection() {
           tab: "make",
           year,
           make,
-          model,
+          customMake: make === "other" ? customMake.trim() : "",
+          model: model.trim(),
         }),
       );
     }
 
     router.push("/steps");
   };
+
+  // const handleSubmit = () => {
+  //   setFormError("");
+
+  //   if (activeTab === "vin") {
+  //     if (!vinValid) {
+  //       setFormError("Please enter a valid 17-character VIN.");
+  //       return;
+  //     }
+  //     if (vinDecoding) {
+  //       setFormError("Please wait — decoding your VIN.");
+  //       return;
+  //     }
+  //     if (!vinDecodeSuccess) {
+  //       setFormError("VIN not recognized. Try switching to Year and Make.");
+  //       return;
+  //     }
+
+  //     sessionStorage.setItem(
+  //       HERO_PREFILL_KEY,
+  //       JSON.stringify({
+  //         tab: "vin",
+  //         vin: vinValue,
+  //         vehicleIdentified: vinDecoded.vehicleIdentified,
+  //         year: vinDecoded.year,
+  //         make: vinDecoded.make,
+  //         vinModel: vinDecoded.vinModel,
+  //       }),
+  //     );
+  //   } else {
+  //     if (!year) {
+  //       setFormError("Please select a year.");
+  //       return;
+  //     }
+  //     if (isUnsupportedYear) {
+  //       setFormError("We only accept motorcycles from 2003 or newer.");
+  //       return;
+  //     }
+  //     if (!make) {
+  //       setFormError("Please select a make.");
+  //       return;
+  //     }
+  //     if (!customMake.trim()) {
+  //       setFormError("Please enter the make.");
+  //       return;
+  //     }
+  //     if (!model.trim()) {
+  //       setFormError("Please enter the model.");
+  //       return;
+  //     }
+
+  //     sessionStorage.setItem(
+  //       HERO_PREFILL_KEY,
+  //       JSON.stringify({
+  //         tab: "make",
+  //         year,
+  //         make,
+  //         customMake: make === "other" ? customMake.trim() : "",
+  //         model,
+  //       }),
+  //     );
+  //   }
+
+  //   router.push("/steps");
+  // };
 
   return (
     <>
@@ -484,7 +579,6 @@ export default function HeroSection() {
                           lastDecodedVin.current = "";
                         }}
                       />
-                      {/* Spinner */}
                       {vinValid && vinDecoding && (
                         <span className="steps__input-valid-icon">
                           <svg
@@ -510,7 +604,6 @@ export default function HeroSection() {
                           </svg>
                         </span>
                       )}
-                      {/* Green check */}
                       {vinValid && !vinDecoding && vinDecodeSuccess && (
                         <span className="steps__input-valid-icon">
                           <svg
@@ -530,19 +623,8 @@ export default function HeroSection() {
                           </svg>
                         </span>
                       )}
-                      {/* Red X */}
-                      {/* {vinValid && !vinDecoding && vinDecodeError && (
-                        <span className="steps__input-valid-icon">
-                          <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
-                            <circle cx="12" cy="12" r="10" fill="#dc2626" />
-                            <line x1="8" y1="8" x2="16" y2="16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-                            <line x1="16" y1="8" x2="8" y2="16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-                          </svg>
-                        </span>
-                      )} */}
                     </div>
 
-                    {/* VIN decode error */}
                     {vinDecodeError && (
                       <p
                         className="steps__field-error"
@@ -552,7 +634,6 @@ export default function HeroSection() {
                       </p>
                     )}
 
-                    {/* Where to find VIN link */}
                     <button
                       type="button"
                       className="steps__vin-link"
@@ -586,7 +667,6 @@ export default function HeroSection() {
                       </svg>
                     </button>
 
-                    {/* Vehicle Identified — only shown on success */}
                     {vinDecodeSuccess && (
                       <>
                         <label
@@ -635,12 +715,14 @@ export default function HeroSection() {
                       value={year}
                       onChange={(v) => {
                         setYear(v);
-                        setFormError("");
+                        setErrors((prev) => ({ ...prev, year: "" }));
                       }}
                       options={YEAR_OPTIONS}
                       placeholder="Choose year"
                     />
-
+                    {errors.year && (
+                      <p className="steps__field-error">{errors.year}</p>
+                    )}
                     {isUnsupportedYear && <UnsupportedYearBanner />}
 
                     {!isUnsupportedYear && (
@@ -655,11 +737,45 @@ export default function HeroSection() {
                           value={make}
                           onChange={(v) => {
                             setMake(v);
-                            setFormError("");
+                            setErrors((prev) => ({ ...prev, make: "" }));
                           }}
                           options={MAKE_OPTIONS}
                           placeholder="Choose make"
                         />
+                        {errors.make && (
+                          <p className="steps__field-error">{errors.make}</p>
+                        )}
+                        {/* Enter Make — shown when Other is selected */}
+                        {make === "other" && (
+                          <>
+                            <label
+                              className="steps__field-label !mb-[0]"
+                              style={{ marginTop: "1rem" }}
+                            >
+                              Enter Make
+                            </label>
+                            <input
+                              type="text"
+                              className="steps__input"
+                              placeholder="e.g. Aprilia, MV Agusta, Benelli…"
+                              value={customMake}
+                              autoFocus
+                              onChange={(e) => {
+                                setCustomMake(e.target.value);
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  customMake: "",
+                                }));
+                              }}
+                            />
+
+                            {make === "other" && errors.customMake && (
+                              <p className="steps__field-error">
+                                {errors.customMake}
+                              </p>
+                            )}
+                          </>
+                        )}
 
                         <label
                           className="steps__field-label !mb-[0]"
@@ -674,23 +790,21 @@ export default function HeroSection() {
                           value={model}
                           onChange={(e) => {
                             setModel(e.target.value);
-                            setFormError("");
+                            setErrors((prev) => ({ ...prev, model: "" }));
                           }}
                         />
+
+                        {errors.model && (
+                          <p className="steps__field-error">{errors.model}</p>
+                        )}
                       </>
                     )}
                   </div>
                 )}
 
-                {/* Global form error */}
-                {formError && (
-                  <p
-                    className="steps__field-error"
-                    style={{ marginTop: "0.6rem" }}
-                  >
-                    {formError}
-                  </p>
-                )}
+                {/* {formError && (
+                  <p className="steps__field-error" style={{ marginTop: "0.6rem" }}>{formError}</p>
+                )} */}
 
                 <button
                   className="form__submit-btn"
