@@ -380,13 +380,15 @@ export default function StepsPage() {
     return true;
   })();
 
-  const continueBtnLabel = isPhotosStep
-    ? hasPhotos
-      ? "Continue"
-      : "Skip for now"
-    : isSubmitStep
-      ? "Submit for Appraisal"
-      : "Continue";
+  const continueBtnLabel = currentStepId === "bike-id"
+    ? "Get my Offer"
+    : isPhotosStep
+      ? hasPhotos
+        ? "Continue"
+        : "Skip for now"
+      : isSubmitStep
+        ? "Submit for Appraisal"
+        : "Continue";
 
   return (
     <FormProvider {...methods}>

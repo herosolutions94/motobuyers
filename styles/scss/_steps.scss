@@ -422,8 +422,16 @@
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: all 0.2s;
     font-family: inherit;
+    &-2 {
+      background: var(--color-white);
+      color: var(--color-black);
+      border: 2px solid var(--color-input-bdr);
+      &:hover {
+        background: var(--color-input-bdr);
+      }
+    }
 
     &:hover {
       opacity: 0.88;
@@ -1054,16 +1062,48 @@ textarea.steps__checkbox-other-input {
   font-weight: 700;
   color: var(--color-black);
   margin-bottom: 4px;
+  @media (max-width: 767px) {
+    display: none;
+  }
+  &-mobile {
+    display: none;
+    @media (max-width: 767px) {
+      display: block;
+    }
+  }
 }
 
 .steps__upload-hint {
   font-size: 13px;
   color: var(--color-muted);
   line-height: 1.5;
+  @media (max-width: 767px) {
+    display: none;
+  }
+  &-mobile {
+    display: none;
+    @media (max-width: 767px) {
+      display: block;
+    }
+  }
 }
 
 .steps__upload-input {
   display: none;
+}
+
+.steps__btn-wrap {
+  display: flex;
+  gap: 15px;
+  @media (max-width: 767px) {
+    display: none;
+  }
+  &-mobile {
+    display: none;
+    @media (max-width: 767px) {
+      display: flex;
+    }
+  }
 }
 
 .steps__upload-btn {
