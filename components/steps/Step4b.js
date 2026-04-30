@@ -18,9 +18,13 @@ const CheckIcon = () => (
 );
 
 export default function Step4b() {
-  const { watch, setValue, formState: { errors } } = useFormContext();
+  const { watch, setValue, getValues, formState: { errors } } = useFormContext();
   const inputRef = useRef(null);
-  const [overflowAt, setOverflowAt] = useState(null);
+  const [overflowAt, setOverflowAt] = useState(() => {
+    const checked = getValues("mechOtherChecked");
+    const text = getValues("mechOtherText");
+    return checked && text ? text.length : null;
+  });
   const isExpanded = overflowAt !== null;
 
   const selected = watch("mechanicalIssues") || [];

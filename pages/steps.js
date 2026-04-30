@@ -11,9 +11,9 @@ import Step4b from "../components/steps/Step4b";
 import Step4c from "../components/steps/Step4c";
 import Step4d from "../components/steps/Step4d";
 import Step5 from "../components/steps/Step5";
-import Step5b from "../components/steps/Step5b";
 import Step6 from "../components/steps/Step6";
 import Step7 from "../components/steps/Step7";
+import Step8 from "../components/steps/Step8";
 
 import { submitAppraisal } from "../lib/submitAppraisal";
 import { HERO_PREFILL_KEY } from "../components/HeroSection";
@@ -48,6 +48,38 @@ function buildSequence(watchedValues) {
   seq.push("title-financial", "photos", "contact-submit", "thank-you");
   return seq;
 }
+
+// ─── Step title (right of progress bar) ─────────────────────────────────────
+const STEP_TITLE_MAP = {
+  "bike-id": "Bike Details",
+  "vehicle-details": "Bike Details",
+  "cosmetic-rating": "Cosmetic Condition",
+  "cosmetic-issues": "Cosmetic Issues",
+  "mech-rating": "Mechanical Condition",
+  "mech-issues": "Mechanical Issue",
+  "service-maint": "Service and Maintenance Items",
+  "tire-mileage": "Tire Millage",
+  "title-financial": "Title and Financial Info",
+  photos: "Photos",
+  "contact-submit": "Contact Info",
+  "thank-you": "Submission Complete",
+};
+
+// ─── Step label (left of progress bar) ──────────────────────────────────────
+const STEP_LABEL_MAP = {
+  "bike-id": "Step 1 of 6",
+  "vehicle-details": "Step 1 of 6",
+  "cosmetic-rating": "Step 2 of 6",
+  "cosmetic-issues": "Step 2 of 6",
+  "mech-rating": "Step 3 of 6",
+  "mech-issues": "Step 3 of 6",
+  "service-maint": "Step 3 of 6",
+  "tire-mileage": "Step 3 of 6",
+  "title-financial": "Step 4 of 6",
+  photos: "Step 5 of 6",
+  "contact-submit": "Step 6 of 6",
+  "thank-you": "Done",
+};
 
 // ─── Progress % per step ID ──────────────────────────────────────────────────
 const PROGRESS_MAP = {
@@ -297,6 +329,57 @@ export default function StepsPage() {
 
   const hasPhotos = (allValues.photos || []).length > 0;
 
+  const centerLabel = (() => {
+    const v = allValues;
+    if (v.tab === "vin") {
+      if (!v.vehicleIdentified) return "";
+      return [v.vehicleIdentified, v.vinModel].filter(Boolean).join(" • ");
+    }
+    const displayMake = v.make === "other" ? v.customMake : v.make;
+    return [v.year, displayMake, v.model].filter(Boolean).join(" • ");
+  })();
+
+  const isStepValid = (() => {
+    const v = allValues;
+    if (currentStepId === "bike-id") {
+      if (v.tab === "vin") return !!v.vin;
+      const yr = v.year;
+      if (!yr || yr === "before-2003" || parseInt(yr, 10) < 2003) return false;
+      if (!v.make) return false;
+      if (v.make === "other" && !v.customMake) return false;
+      return !!v.model;
+    }
+    if (currentStepId === "vehicle-details")
+      return !!(v.mileage && v.zip && v.ridden && v.email);
+    if (currentStepId === "cosmetic-rating")
+      return v.cosmetic !== null && v.cosmetic !== undefined;
+    if (currentStepId === "cosmetic-issues")
+      return !!(
+        v.cosmeticIssues?.length ||
+        v.cosmeticOtherChecked ||
+        v.noIssues
+      );
+    if (currentStepId === "mech-rating")
+      return v.mechanical !== null && v.mechanical !== undefined;
+    if (currentStepId === "mech-issues")
+      return !!(
+        v.mechanicalIssues?.length ||
+        v.mechOtherChecked ||
+        v.mechNoIssues
+      );
+    if (currentStepId === "service-maint")
+      return !!(
+        v.serviceItems?.length ||
+        v.serviceOtherChecked ||
+        v.serviceCircleOption
+      );
+    if (currentStepId === "title-financial")
+      return !!(v.titleType && v.hasLoan);
+    if (currentStepId === "contact-submit")
+      return !!(v.firstName && v.phone && v.contactEmail);
+    return true;
+  })();
+
   const continueBtnLabel = isPhotosStep
     ? hasPhotos
       ? "Continue"
@@ -323,6 +406,11 @@ export default function StepsPage() {
         {/* Progress Bar */}
         <div className="steps__progress-bar">
           <Contain>
+            <div className="steps__progress-data">
+              <div className="left">{STEP_LABEL_MAP[currentStepId] ?? ""}</div>
+              <div className="center">{centerLabel}</div>
+              <div className="right">{STEP_TITLE_MAP[currentStepId] ?? ""}</div>
+            </div>
             <div className="steps__progress-track">
               <div
                 className="steps__progress-fill"
@@ -359,12 +447,12 @@ export default function StepsPage() {
           {currentStepId === "title-financial" && (
             <Step5 bikeLabel={bikeLabel} />
           )}
-          {currentStepId === "photos" && <Step5b />}
+          {currentStepId === "photos" && <Step6 />}
           {currentStepId === "contact-submit" && (
-            <Step6 bikeLabel={bikeLabel} />
+            <Step7 bikeLabel={bikeLabel} />
           )}
           {currentStepId === "thank-you" && (
-            <Step7 bikeLabel={bikeLabel} firstName={allValues.firstName} />
+            <Step8 bikeLabel={bikeLabel} firstName={allValues.firstName} />
           )}
         </Contain>
 
@@ -395,9 +483,11 @@ export default function StepsPage() {
                 <button
                   className="steps__btn-continue"
                   onClick={handleContinue}
-                  disabled={submitting}
+                  disabled={!isStepValid || submitting}
                   style={
-                    submitting ? { opacity: 0.7, cursor: "not-allowed" } : {}
+                    !isStepValid || submitting
+                      ? { opacity: 0.5, cursor: "not-allowed" }
+                      : {}
                   }
                 >
                   {submitting ? "Submitting…" : continueBtnLabel}

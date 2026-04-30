@@ -29,9 +29,13 @@ const CheckIcon = () => (
 );
 
 export default function Step4c() {
-  const { watch, setValue, formState: { errors } } = useFormContext();
+  const { watch, setValue, getValues, formState: { errors } } = useFormContext();
   const inputRef = useRef(null);
-  const [overflowAt, setOverflowAt] = useState(null);
+  const [overflowAt, setOverflowAt] = useState(() => {
+    const checked = getValues("serviceOtherChecked");
+    const text = getValues("serviceOtherText");
+    return checked && text ? text.length : null;
+  });
   const isExpanded = overflowAt !== null;
 
   const selected = watch("serviceItems") || [];

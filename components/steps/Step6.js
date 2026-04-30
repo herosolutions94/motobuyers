@@ -1,95 +1,101 @@
+import { useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
-import InputMask from "react-input-mask";
 
 export default function Step6() {
-  const {
-    register,
-    formState: { errors },
-  } = useFormContext();
+  const { watch, setValue } = useFormContext();
+  const inputRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+  const photos = watch("photos") || [];
+
+  const addFiles = (files) => {
+    const incoming = Array.from(files).map((file) => ({
+      id: `${file.name}-${file.size}-${Date.now()}`,
+      url: URL.createObjectURL(file),
+      name: file.name,
+      file, // ← keep the real File object for Supabase Storage upload
+    }));
+    setValue("photos", [...photos, ...incoming].slice(0, 30));
+  };
+
+  const removePhoto = (id) => {
+    setValue("photos", photos.filter((p) => p.id !== id));
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    addFiles(e.dataTransfer.files);
+  };
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">How can we reach you?</h1>
+      <h1 className="steps__title">Add photos of your motorcycle</h1>
       <p className="steps__subtitle">
-        We will use this information to follow up with your appraisal.
+        Our data shows that photos improve offer accuracy by up to 25%.
       </p>
 
       <div className="steps__single-col">
-        <div className="steps__form-card">
-          <div className="steps__contact-field">
-            <label className="steps__field-label !mb-[0]">Full Name</label>
-            <input
-              {...register("firstName", {
-                required: "Please enter your full name",
-                minLength: {
-                  value: 3,
-                  message: "Name must be at least 3 characters",
-                },
-              })}
-              type="text"
-              className={`steps__input steps__input--rect${errors.firstName ? " steps__input--error" : ""}`}
-              placeholder="Enter your full name"
-            />
-            {errors.firstName && (
-              <p className="steps__field-error">{errors.firstName.message}</p>
-            )}
+        <div
+          className={`steps__upload-zone${dragging ? " steps__upload-zone--drag" : ""}`}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+        >
+          <div className="steps__upload-header">
+            <span className="steps__upload-icon">
+              <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+                <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="var(--color-red)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <div>
+              <p className="steps__upload-title">Upload photos</p>
+              <p className="steps__upload-hint">Drag photos here or browse your computer. Uploads start immediately in the background.</p>
+            </div>
           </div>
 
-          <div className="steps__contact-field" style={{ marginTop: "2rem" }}>
-            <label className="steps__field-label !mb-[0]">Phone Number</label>
-            <InputMask
-              mask="(999) 999-9999"
-              {...register("phone", {
-                required: "Please enter your phone number",
-              })}
-            >
-              {(inputProps) => (
-                <input
-                  {...inputProps}
-                  type="tel"
-                  className={`steps__input steps__input--rect${errors.phone ? " steps__input--error" : ""}`}
-                  placeholder="(555) 000-0000"
-                />
-              )}
-            </InputMask>
-            {errors.phone && (
-              <p className="steps__field-error">{errors.phone.message}</p>
-            )}
-          </div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="steps__upload-input"
+            onChange={(e) => addFiles(e.target.files)}
+          />
 
-          <div className="steps__contact-field" style={{ marginTop: "2rem" }}>
-            <label className="steps__field-label !mb-[0]">Email Address</label>
-            <input
-              {...register("contactEmail", {
-                required: "Please enter your email address",
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Please enter a valid email address",
-                },
-              })}
-              type="email"
-              className={`steps__input steps__input--rect${errors.contactEmail ? " steps__input--error" : ""}`}
-              placeholder="you@example.com"
-            />
-            {errors.contactEmail && (
-              <p className="steps__field-error">
-                {errors.contactEmail.message}
-              </p>
-            )}
-          </div>
-
-          <div className="steps__contact-field" style={{ marginTop: "2rem" }}>
-            <label className="steps__field-label !mb-[0]">
-              Anything else we should know?
-            </label>
-            <textarea
-              {...register("notes")}
-              rows={5}
-              placeholder="Add any details that might affect the offer..."
-              className="steps__input steps__input--rect"
-            />
-          </div>
+          <button
+            type="button"
+            className="steps__btn-continue steps__upload-btn"
+            onClick={() => inputRef.current?.click()}
+          >
+            Upload photos
+          </button>
         </div>
+
+        <div className="steps__upload-meta">
+          <span>Up to 30 photos</span>
+          <span>Uploads saved with your draft automatically.</span>
+        </div>
+
+        {photos.length > 0 && (
+          <div className="steps__upload-thumbs">
+            {photos.map((p) => (
+              <div key={p.id} className="steps__upload-thumb">
+                <img src={p.url} alt={p.name} />
+                <button
+                  type="button"
+                  className="steps__upload-thumb-remove"
+                  onClick={() => removePhoto(p.id)}
+                  aria-label="Remove photo"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" width="12" height="12">
+                    <line x1="18" y1="6" x2="6" y2="18" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="6" y1="6" x2="18" y2="18" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

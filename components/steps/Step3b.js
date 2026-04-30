@@ -15,9 +15,13 @@ const CheckIcon = () => (
 );
 
 export default function Step3b() {
-  const { watch, setValue, formState: { errors } } = useFormContext();
+  const { watch, setValue, getValues, formState: { errors } } = useFormContext();
   const inputRef = useRef(null);
-  const [overflowAt, setOverflowAt] = useState(null);
+  const [overflowAt, setOverflowAt] = useState(() => {
+    const checked = getValues("cosmeticOtherChecked");
+    const text = getValues("cosmeticOtherText");
+    return checked && text ? text.length : null;
+  });
   const isExpanded = overflowAt !== null;
 
   const selected = watch("cosmeticIssues") || [];
