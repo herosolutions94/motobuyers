@@ -1,8 +1,9 @@
 import { useState } from "react";
 import Contain from "./contain";
 import Link from "next/link";
+import { cmsFileUrl } from "@/helpers/helpers";
 
-export default function HeaderComponent() {
+export default function HeaderComponent({ siteSettings }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
@@ -19,7 +20,10 @@ export default function HeaderComponent() {
         <nav className="nav" role="navigation" aria-label="Main navigation">
           <div className="nav__logo">
             <Link href="/">
-              <img src="/images/logo.png" alt="" />
+              <img
+                src={cmsFileUrl(siteSettings?.site_logo)}
+                alt={siteSettings?.site_name}
+              />
             </Link>
           </div>
 
@@ -34,7 +38,7 @@ export default function HeaderComponent() {
             >
               Compare Moto Buyers
             </Link>
-            <button
+            {/* <button
               className="nav__more"
               aria-haspopup="true"
               aria-expanded="false"
@@ -54,7 +58,7 @@ export default function HeaderComponent() {
                   strokeLinejoin="round"
                 />
               </svg>
-            </button>
+            </button> */}
           </div>
           <Link href="/steps" className="nav__cta" role="button">
             Get my Offer
@@ -94,9 +98,9 @@ export default function HeaderComponent() {
         >
           Compare Moto Buyers
         </Link>
-        <a href="#" className="nav__mobile-link" onClick={closeMobileMenu}>
+        {/* <a href="#" className="nav__mobile-link" onClick={closeMobileMenu}>
           More
-        </a>
+        </a> */}
         <Link href="/steps" className="nav__mobile-cta">
           Get my Offer
         </Link>
