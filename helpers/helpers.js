@@ -226,8 +226,20 @@ export function websiteLink(link) {
   else return link;
 }
 
-export function cmsFileUrl(src, folder = "images") {
-  return `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}uploads/${folder}/${src}`;
+// export function cmsFileUrl(src, folder = "images") {
+//   return `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}uploads/${folder}/${src}`;
+// }
+
+export function cmsFileUrl(src, folder = "images", stock = false) {
+  if (src === null || src === undefined || src === "") {
+    if (stock === true) {
+      return "/images/stock-profile.jpg";
+    } else {
+      return "/images/no-image.svg";
+    }
+  } else {
+    return `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}storage/${folder}/${src}`;
+  }
 }
 
 export function appendSIfPlural(value, string) {
@@ -301,3 +313,14 @@ export function parseCurrency(raw) {
   const n = parseFloat(String(raw).replace(/,/g, ""));
   return isNaN(n) ? null : n;
 }
+
+export const makeExternalUrl = (url) => {
+  // console.log(url);
+  if (url) {
+    if (!url.startsWith("https")) {
+      url = "https://" + url;
+    }
+  }
+
+  return url;
+};

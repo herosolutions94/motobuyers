@@ -1,6 +1,10 @@
 import Section from "./section";
 import Contain from "./contain";
 import Heading from "./heading";
+import Text from "@/components/text";
+import { useDispatch, useSelector } from "react-redux";
+import { saveContactQuery } from "@/redux/reducers/contact";
+import { useForm } from "react-hook-form";
 
 const INFO_CARDS = [
   {
@@ -42,6 +46,29 @@ const INFO_CARDS = [
 ];
 
 export default function ContactSection() {
+  const dispatch = useDispatch();
+  const isFormProcessing = useSelector(
+    (state) => state.contact.isFormProcessing,
+  );
+
+  const {
+    register,
+    formState: { errors },
+    handleSubmit,
+    reset,
+  } = useForm();
+
+  // const handleContactFormSubmit = (data, e) => {
+  //   e.preventDefault();
+  //   dispatch(saveContactQuery(data));
+  // };
+  const handleContactFormSubmit = async (data) => {
+    const res = await dispatch(saveContactQuery(data));
+    if (res.payload?.status == 1) {
+      reset();
+    }
+  };
+
   return (
     <>
       {/* ── Form ── */}
@@ -54,25 +81,75 @@ export default function ContactSection() {
             <Heading as="h6" className="contact-form__card-title">
               Let&apos;s Start
             </Heading>
-            <form className="contact-form__form">
+            <form
+              className="contact-form__form"
+              onSubmit={handleSubmit(handleContactFormSubmit)}
+              method="POST"
+            >
               <input
-                type="email"
+                type="text"
+                className="contact-form__input"
+                placeholder="Full Name"
+                {...register("name", {
+                  required: "Full Name is required!",
+                  minLength: {
+                    value: 3,
+                    message: "Full Name should contains atleast 3 letters.",
+                  },
+                })}
+              />
+              <div className="validation-error" style={{ color: "red" }}>
+                {errors.name?.message}
+              </div>
+              <input
+                type="text"
                 className="contact-form__input"
                 placeholder="Email"
+                {...register("email", {
+                  required: "Email is required!",
+                  pattern: {
+                    value:
+                      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+                    message: "Please enter a valid email!",
+                  },
+                })}
               />
+              <div className="validation-error" style={{ color: "red" }}>
+                {errors.email?.message}
+              </div>
               <input
-                type="tel"
+                type="text"
                 className="contact-form__input"
                 placeholder="Phone"
+                {...register("phone", {
+                  required: "Phone Number is required!",
+                  pattern: {
+                    value: /^[+\d]+$/, // Allow '+' followed by digits only
+                    message: "Please enter a valid phone number!",
+                  },
+                })}
               />
+              <div className="validation-error" style={{ color: "red" }}>
+                {errors.phone?.message}
+              </div>
               <textarea
                 className="contact-form__textarea"
                 placeholder="Message"
                 rows={6}
+                {...register("message", {
+                  required: "Message is required.",
+                })}
               />
+              <div className="validation-error">
+                {errors.message?.message}
+              </div>
               <div className="contact-form__actions">
-                <button type="submit" className="cta__btn cta__btn--primary">
-                  Submit
+                <button
+                  type="submit"
+                  disabled={isFormProcessing}
+                  className="cta__btn cta__btn--primary"
+                >
+                  Submit {isFormProcessing && <i className="spinner"></i>}
                 </button>
               </div>
             </form>
