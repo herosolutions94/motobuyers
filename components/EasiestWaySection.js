@@ -4,33 +4,22 @@ import Contain from "./contain";
 import Heading from "./heading";
 import Paragraph from "./paragraph";
 
-const CARDS = [
-  {
-    title: "Book Value Isn't Everything",
-    desc: "Some people might believe their motorcycle is worth more based on online \"book values.\" While those numbers can be helpful as a general guide, they don't account for local market conditions, your bike's actual condition, or current demand.",
-    icon: "/images/quote-offer-1.png",
-  },
-  {
-    title: "Your Loan Balance vs. Bike Value",
-    desc: "Still paying off your motorcycle? It's important to understand that your loan balance doesn't determine your bike's value. What you owe and what your bike is worth are two entirely separate figures.",
-    icon: "/images/quote-offer-2.png",
-  },
-  {
-    title: "Wishing for More?",
-    desc: "It's natural to hope for the highest possible amount when selling your motorcycle. Some sellers think they can get more through private sales, but that comes with more time, effort, and uncertainty.",
-    icon: "/images/quote-offer-3.png",
-  },
-  {
-    title: "Understanding Market Conditions",
-    desc: "The motorcycle market fluctuates based on season, geography, and trends. Our offers reflect real-time demand so you always get a number grounded in what buyers are actually paying right now.",
-    icon: "/images/hiw-icon-offer.png",
-  },
-];
+import Text from "@/components/text";
+import { cmsFileUrl } from "@/helpers/helpers";
 
-export default function EasiestWaySection() {
+export default function EasiestWaySection({ content }) {
   const [active, setActive] = useState(0);
 
+  const items = [2, 3, 4];
+
+  const CARDS = items.map((i) => ({
+    title: content?.[`sec2_card_heading${i}`],
+    desc: content?.[`sec2_card_text${i}`],
+    icon: cmsFileUrl(content?.[`image${i}`]),
+  }));
+
   const prev = () => setActive((i) => (i === 0 ? CARDS.length - 1 : i - 1));
+
   const next = () => setActive((i) => (i === CARDS.length - 1 ? 0 : i + 1));
 
   return (
@@ -38,28 +27,28 @@ export default function EasiestWaySection() {
       <Contain>
         <div className="easiest__header">
           <Heading as="h2" className="easiest__title">
-            MotoBuyers: The Easiest Way to Sell Your Motorcycle!
+            <Text string={content?.section2_heading} />
           </Heading>
+
           <Paragraph className="easiest__subtitle">
-            Selling your motorcycle with MotoBuyers is simple, fast, and
-            hassle-free. Get a fair offer, skip the stress, and sell your bike
-            on your terms. We handle everything from start to finish, so you can
-            cash out with ease!
+            <Text string={content?.section2_text} />
           </Paragraph>
         </div>
 
-        {/* Desktop grid — shows 3 at a time */}
+        {/* Desktop grid */}
         <div className="easiest__grid">
           {CARDS.slice(0, 3).map((card, idx) => (
-            <div key={idx} className="easiest__card">
+            <div key={`desktop-${idx}`} className="easiest__card">
               <div className="easiest__icon">
                 <img src={card.icon} alt={card.title} />
               </div>
+
               <Heading as="h3" className="easiest__card-title">
                 {card.title}
               </Heading>
+
               <Paragraph className="easiest__card-desc">
-                {card.desc.length > 120
+                {card.desc?.length > 120
                   ? card.desc.slice(0, 120) + "........"
                   : card.desc}
               </Paragraph>
@@ -72,18 +61,22 @@ export default function EasiestWaySection() {
           <div className="easiest__track">
             {CARDS.map((card, idx) => (
               <div
-                key={idx}
-                className={`easiest__slide${active === idx ? " easiest__slide--active" : ""}`}
+                key={`mobile-${idx}`}
+                className={`easiest__slide${
+                  active === idx ? " easiest__slide--active" : ""
+                }`}
               >
                 <div className="easiest__card">
                   <div className="easiest__icon">
                     <img src={card.icon} alt={card.title} />
                   </div>
+
                   <Heading as="h3" className="easiest__card-title">
                     {card.title}
                   </Heading>
+
                   <Paragraph className="easiest__card-desc">
-                    {card.desc.length > 120
+                    {card.desc?.length > 120
                       ? card.desc.slice(0, 120) + "........"
                       : card.desc}
                   </Paragraph>
@@ -94,11 +87,17 @@ export default function EasiestWaySection() {
         </div>
 
         {/* Dots */}
-        <div className="easiest__dots" role="tablist" aria-label="Slide navigation">
+        <div
+          className="easiest__dots"
+          role="tablist"
+          aria-label="Slide navigation"
+        >
           {CARDS.map((_, idx) => (
             <button
-              key={idx}
-              className={`easiest__dot${active === idx ? " easiest__dot--active" : ""}`}
+              key={`dot-${idx}`}
+              className={`easiest__dot${
+                active === idx ? " easiest__dot--active" : ""
+              }`}
               onClick={() => setActive(idx)}
               aria-label={`Go to slide ${idx + 1}`}
               role="tab"

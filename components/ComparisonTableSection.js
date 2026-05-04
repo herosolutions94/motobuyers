@@ -3,7 +3,11 @@ import Heading from "./heading";
 import Paragraph from "./paragraph";
 import Section from "./section";
 
-export default function ComparisonSection() {
+import Text from "@/components/text";
+import { cmsFileUrl } from "@/helpers/helpers";
+import Link from "next/link";
+
+export default function ComparisonSection({ content, comparisons }) {
   const features = [
     {
       icon: "/images/cmp-icon-1.svg",
@@ -55,14 +59,17 @@ export default function ComparisonSection() {
         <Contain>
           <div className="content text-center !mb-[5rem]">
             <Heading className="main__heading">
-              Moto Buyers vs. Private Sale
+              <Text string={content?.section1_heading} />
             </Heading>
             <Paragraph className="cmp__subtitle">
-              See why Moto Buyers is the smarter choice
+              <Text string={content?.section1_text} />
             </Paragraph>
           </div>
           <div className="compare_image">
-            <img src="/images/moto_buyer_main_image.png" alt="" />
+            <img
+              src={cmsFileUrl(content?.image1, "images")}
+              alt={content?.section1_heading}
+            />
           </div>
           <div className="cmp__inner">
             <div
@@ -93,16 +100,18 @@ export default function ComparisonSection() {
               </div>
 
               {/* Rows */}
-              {features.map((feature, idx) => (
+              {comparisons.map((feature, idx) => (
                 <div key={idx} className="cmp__row" role="row">
                   <div className="cmp__feat" role="cell">
                     <img
-                      src={feature.icon}
-                      alt=""
+                      src={cmsFileUrl(feature?.image, "images")}
+                      alt={feature?.title}
                       className="cmp__feat-icon"
                       aria-hidden="true"
                     />
-                    <span className="cmp__feat-label">{feature.label}</span>
+                    <span className="cmp__feat-label">
+                      <Text string={feature?.title} />
+                    </span>
                   </div>
                   <div className="cmp__cell cmp__cell--highlight" role="cell">
                     {feature.motoBuyers ? (

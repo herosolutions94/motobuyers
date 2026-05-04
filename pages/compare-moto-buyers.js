@@ -5,10 +5,45 @@ import HowItWorksCtaSection from "../components/HowItWorksCtaSection";
 import EasiestWaySection from "../components/EasiestWaySection";
 import ReadyToRideSection from "../components/ReadyToRideSection";
 
-export default function CompareMotoBuyers() {
+import http from "@/helpers/http";
+import { parse } from "cookie";
+import { doObjToFormData, cmsFileUrl } from "@/helpers/helpers";
+
+import MetaGenerator from "@/components/meta-generator";
+import Text from "@/components/text";
+import Link from "next/link";
+
+export const getServerSideProps = async (context) => {
+  const { req } = context;
+  const cookieHeader = req.headers.cookie || "";
+  const cookieValue = parse(cookieHeader);
+  const authToken =
+    cookieValue["authToken"] !== undefined &&
+    cookieValue["authToken"] !== null &&
+    cookieValue["authToken"] !== ""
+      ? cookieValue["authToken"]
+      : "";
+
+  const result = await http
+    .post("compare-page", doObjToFormData({ token: authToken }))
+    .then((response) => response.data)
+    .catch((error) => error.response.data.message);
+
+  return { props: { result } };
+};
+
+export default function CompareMotoBuyers({ result }) {
+  let {
+    meta_desc,
+    page_title,
+    content,
+    comparisons,
+    site_settings,
+    cta_section,
+  } = result;
   return (
     <>
-      <Head>
+      {/* <Head>
         <title>Compare MotoBuyers – MotoBuyers</title>
         <meta
           name="description"
@@ -18,12 +53,16 @@ export default function CompareMotoBuyers() {
           href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
           rel="stylesheet"
         />
-      </Head>
+      </Head> */}
+      <MetaGenerator
+        page_title={page_title + " - " + site_settings?.site_name}
+        meta_desc={meta_desc}
+      />
       <main id="compare__page">
-        <PageHeroBanner title="MotoBuyers vs Other Ways to Sell Your Motorcycle" />
-        <ComparisonSection />
-        <EasiestWaySection />
-        <HowItWorksCtaSection />
+        <PageHeroBanner content={content} />
+        <ComparisonSection content={content} comparisons={comparisons} />
+        <EasiestWaySection content={content} />
+        <HowItWorksCtaSection content={content} />
         <ReadyToRideSection />
       </main>
     </>

@@ -2,8 +2,13 @@ import Section from "./section";
 import Contain from "./contain";
 import Heading from "./heading";
 import Paragraph from "./paragraph";
+import Image from "next/image";
 
-export default function HowItWorksHeroSection() {
+import http from "@/helpers/http";
+import Text from "@/components/text";
+import { cmsFileUrl } from "@/helpers/helpers";
+
+export default function HowItWorksHeroSection({ content }) {
   return (
     <>
       <Section id="hiw-hero">
@@ -13,14 +18,17 @@ export default function HowItWorksHeroSection() {
         ></div>
         <Contain>
           <div className="hiw-hero__images">
-            <img src="/images/hiw_hero_image.png" alt="HIW Photo" />
+            <img
+              src={cmsFileUrl(content?.image1, "images")}
+              alt={content?.banner_heading}
+            />
           </div>
           <div className="hiw-hero__content">
             <Heading className="hiw-hero__title">
-              Skip the Hassle. Sell Your Motorcycle in Minutes
+              <Text string={content?.banner_heading} />
             </Heading>
             <Paragraph className="hiw-hero__subtitle">
-              A simple process. A real offer. A smooth ride to instant cash.
+              <Text string={content?.banner_text} />
             </Paragraph>
           </div>
         </Contain>

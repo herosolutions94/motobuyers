@@ -3,46 +3,52 @@ import Section from "./section";
 import Heading from "./heading";
 import Paragraph from "./paragraph";
 import Contain from "./contain";
+import { formatDate } from "@/helpers/helpers";
 
-export default function TestimonialsSection() {
+import Text from "@/components/text";
+import { cmsFileUrl } from "@/helpers/helpers";
+import Link from "next/link";
+
+export default function TestimonialsSection({ content, testimonials }) {
   const [currentPage, setCurrentPage] = useState(0);
-  const testimonials = [
-    {
-      name: "Samarth Asthana",
-      review:
-        "Sold my bike in less than 24 hours! The offer was fair and the process was smooth.",
-      avatar: "test__avatar--blue",
-      date: "3 weeks ago",
-      rating: 5,
-    },
-    {
-      name: "Linda M",
-      review:
-        "Highly recommend. I didn't have to worry about paperwork or meeting strangers.",
-      avatar: "test__avatar--purple",
-      date: "3 weeks ago",
-      rating: 5,
-    },
-    {
-      name: "James R",
-      review:
-        "Way easier than listing it myself. Quick appraisal, honest pricing, and no tire-kickers!",
-      avatar: "test__avatar--green",
-      date: "3 weeks ago",
-      rating: 5,
-    },
-  ];
+  // const testimonials = [
+  //   {
+  //     name: "Samarth Asthana",
+  //     review:
+  //       "Sold my bike in less than 24 hours! The offer was fair and the process was smooth.",
+  //     avatar: "test__avatar--blue",
+  //     date: "3 weeks ago",
+  //     rating: 5,
+  //   },
+  //   {
+  //     name: "Linda M",
+  //     review:
+  //       "Highly recommend. I didn't have to worry about paperwork or meeting strangers.",
+  //     avatar: "test__avatar--purple",
+  //     date: "3 weeks ago",
+  //     rating: 5,
+  //   },
+  //   {
+  //     name: "James R",
+  //     review:
+  //       "Way easier than listing it myself. Quick appraisal, honest pricing, and no tire-kickers!",
+  //     avatar: "test__avatar--green",
+  //     date: "3 weeks ago",
+  //     rating: 5,
+  //   },
+  // ];
 
   return (
     <>
       <Section id="testimonials">
         <Contain>
           <div className="content text-center max-w-[73rem] !mx-[auto] !mb-[4rem]">
-            <Heading className="main__heading">Trusted by Real Riders</Heading>
+            <Heading className="main__heading">
+              {" "}
+              <Text string={content?.section4_heading} />
+            </Heading>
             <Paragraph className="test__subtitle !mt-[2rem]">
-              Thousands of motorcycle owners have trusted MotoBuyers for a fast,
-              fair, and hassle-free selling experience. Don't just take our word
-              for it — see what real riders are saying!
+              <Text string={content?.section4_text} />
             </Paragraph>
           </div>
           <div className="test__inner">
@@ -50,14 +56,17 @@ export default function TestimonialsSection() {
               {testimonials.map((testimonial, idx) => (
                 <div key={idx} className="test__card">
                   <div
+                    key={testimonial?.id || idx}
                     className={`test__avatar ${testimonial.avatar}`}
                     aria-label="User avatar"
                     role="img"
                   ></div>
                   <div className="test__card-data">
-                    <div className="test__card-name">{testimonial.name}</div>
+                    <div className="test__card-name">
+                      <Text string={testimonial?.name} />
+                    </div>
                     <Paragraph className="test__card-review">
-                      {testimonial.review}
+                      <Text string={testimonial?.message} />
                     </Paragraph>
                     <div className="test__card-footer">
                       <div className="test__card-meta">
@@ -84,15 +93,21 @@ export default function TestimonialsSection() {
                             fill="#EA4335"
                           />
                         </svg>
-                        <span className="test__date">{testimonial.date}</span>
+                        <span className="test__date">
+                          {formatDate(testimonial?.created_at)}
+                        </span>
                       </div>
                       <div
                         className="test__stars"
-                        aria-label={`${testimonial.rating} out of 5 stars`}
+                        aria-label={`${testimonial?.ratings || 0} out of 5 stars`}
                       >
-                        {[...Array(testimonial.rating)].map((_, i) => (
+                        {[
+                          ...Array(
+                            Math.floor(Number(testimonial?.ratings) || 0),
+                          ),
+                        ].map((_, i) => (
                           <svg
-                            key={i}
+                            key={`star-${i}`}
                             className="test__star"
                             viewBox="0 0 22 21"
                             fill="#FFD700"
