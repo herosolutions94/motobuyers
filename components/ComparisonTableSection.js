@@ -1,9 +1,13 @@
+import { cmsFileUrl } from "@/helpers/helpers";
 import Contain from "./contain";
 import Heading from "./heading";
 import Paragraph from "./paragraph";
 import Section from "./section";
+import Text from "./text";
 
-export default function ComparisonSection() {
+export default function ComparisonSection({ content, comparisons }) {
+  console.log('comparisons',comparisons);
+  
   const features = [
     {
       icon: "/images/cmp-icon-1.svg",
@@ -51,18 +55,20 @@ export default function ComparisonSection() {
           style={{
             backgroundImage: "url(/images/buyer_sale_background.png)",
           }}
+          // style={{ backgroundImage: `url(${cmsFileUrl(content?.image9)})` }}
         ></div>
         <Contain>
           <div className="content text-center !mb-[5rem]">
             <Heading className="main__heading">
-              Moto Buyers vs. Private Sale
+              {content?.section2_heading}
             </Heading>
             <Paragraph className="cmp__subtitle">
-              See why Moto Buyers is the smarter choice
+              <Text string={content?.section2_text} parse={true} />
             </Paragraph>
           </div>
           <div className="compare_image">
-            <img src="/images/moto_buyer_main_image.png" alt="" />
+            {/* <img src="/images/moto_buyer_main_image.png" alt="" /> */}
+            <img src={cmsFileUrl(content?.image10)} alt="Motorcycles" />
           </div>
           <div className="cmp__inner">
             <div

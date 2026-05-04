@@ -2,18 +2,20 @@ import Section from "./section";
 import Contain from "./contain";
 import Heading from "./heading";
 import Paragraph from "./paragraph";
+import Text from "./text";
 
-export default function PageHeroBanner({ title, subtitle }) {
+export default function PageHeroBanner({ content }) {
   return (
     <Section id="page-hero-banner">
       <Contain>
         <div className="page-hero-banner__content">
           <Heading className="page-hero-banner__title main__heading">
-            {title}
+            {content?.banner_heading}
           </Heading>
-          {subtitle && (
+          {content?.banner_text && (
             <Paragraph className="page-hero-banner__subtitle">
-              {subtitle}
+              {/* {subtitle} */}
+              <Text string={content?.banner_text} />
             </Paragraph>
           )}
         </div>

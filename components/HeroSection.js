@@ -4,6 +4,8 @@ import Section from "./section";
 import Contain from "./contain";
 import Heading from "./heading";
 import Paragraph from "./paragraph";
+import { cmsFileUrl } from "@/helpers/helpers";
+import Text from "./text";
 
 // ─── Custom Select ────────────────────────────────────────────────────────────
 function CustomSelect({ value, onChange, options, placeholder }) {
@@ -160,7 +162,7 @@ function isValidVin(vin) {
 }
 
 // ─── VinHelpModal ─────────────────────────────────────────────────────────────
-function VinHelpModal({ onClose }) {
+function VinHelpModal({ onClose, content }) {
   return (
     <div className="steps__modal-overlay" onClick={onClose}>
       <div
@@ -194,31 +196,30 @@ function VinHelpModal({ onClose }) {
           </svg>
         </button>
         <h2 className="steps__modal-title steps__modal-title--left">
-          Where to find your VIN?
+          {content?.tab1_popup_heading}
         </h2>
         <p className="steps__modal-subtitle">
-          You can usually find the VIN on the steering neck, engine casing, or
-          registration documents.
+          <Text string={content?.tab1_popup_txt} parse={true} />
         </p>
         <div className="steps__vin-cards">
           <div className="steps__vin-card">
-            <p className="steps__vin-card-title">Steering neck</p>
-            <p className="steps__vin-card-desc">
-              Stamped on the front of the frame, just behind the handlebars.
+            <p className="steps__vin-card-title">
+              {content?.popup_card_heading3}
             </p>
+            <p className="steps__vin-card-desc">{content?.popup_card_text3}</p>
             <img
-              src="/images/bikes.png"
+              src={cmsFileUrl(content?.image3)}
               alt="Steering neck location"
               className="steps__vin-card-img"
             />
           </div>
           <div className="steps__vin-card">
-            <p className="steps__vin-card-title">Engine casing</p>
-            <p className="steps__vin-card-desc">
-              Engraved on the side of the engine
+            <p className="steps__vin-card-title">
+              {content?.popup_card_heading4}
             </p>
+            <p className="steps__vin-card-desc">{content?.popup_card_text4}</p>
             <img
-              src="/images/bikes.png"
+              src={cmsFileUrl(content?.image4)}
               alt="Engine casing location"
               className="steps__vin-card-img"
             />
@@ -249,7 +250,7 @@ function UnsupportedYearBanner() {
 export const HERO_PREFILL_KEY = "motobuyers_step1_prefill";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function HeroSection() {
+export default function HeroSection({ content }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("vin");
   const [showVinHelp, setShowVinHelp] = useState(false);
@@ -486,23 +487,21 @@ export default function HeroSection() {
       <Section id="hero">
         <div
           className="hero__bg"
-          style={{ backgroundImage: "url(/images/hero-bg.png)" }}
+          style={{ backgroundImage: `url(${cmsFileUrl(content?.image1)})` }}
         />
         <Contain>
           <div className="hero__content">
-            <Heading className="hero__title">
-              Sell Your Motorcycle Just Got Easier
-            </Heading>
+            <Heading className="hero__title">{content?.banner_heading}</Heading>
             <Paragraph className="hero__subtitle">
-              Answer a few questions about your motorcycle to get a customized
-              offer from one of our appraisers.
+              <Text string={content?.banner_text} parse={true} />
             </Paragraph>
           </div>
 
           <div className="hero__inner">
             <div className="hero__left">
               <div className="hero__bikes" aria-hidden="true">
-                <img src="/images/bikes.png" alt="Motorcycles" />
+                {/* <img src="/images/bikes.png" alt="Motorcycles" /> */}
+                <img src={cmsFileUrl(content?.image2)} alt="Motorcycles" />
               </div>
               <div
                 className="hero__play"
@@ -639,7 +638,7 @@ export default function HeroSection() {
                       className="steps__vin-link"
                       onClick={() => setShowVinHelp(true)}
                     >
-                      Where to find your VIN
+                      {content?.tab1_popup_label}
                       <svg
                         viewBox="0 0 24 24"
                         fill="none"
@@ -812,7 +811,7 @@ export default function HeroSection() {
                   style={{ marginTop: "20px" }}
                   onClick={handleSubmit}
                 >
-                  GET YOUR OFFER
+                  {content?.form_btn_heading}
                 </button>
               </div>
             </div>
@@ -820,7 +819,9 @@ export default function HeroSection() {
         </Contain>
       </Section>
 
-      {showVinHelp && <VinHelpModal onClose={() => setShowVinHelp(false)} />}
+      {showVinHelp && (
+        <VinHelpModal onClose={() => setShowVinHelp(false)} content={content} />
+      )}
     </>
   );
 }

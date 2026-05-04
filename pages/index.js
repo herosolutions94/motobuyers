@@ -31,10 +31,18 @@ export const getServerSideProps = async (context) => {
   return { props: { result } };
 };
 
-export default function Final() {
+export default function Final({ result }) {
+  let {
+    meta_desc,
+    page_title,
+    content,
+    site_settings,
+    comparisons,
+    testimonials,
+  } = result;
   return (
     <>
-      <Head>
+      {/* <Head>
         <title>MotoBuyers – Sell Your Motorcycle Just Got Easier</title>
         <meta
           name="description"
@@ -44,11 +52,15 @@ export default function Final() {
           href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
           rel="stylesheet"
         />
-      </Head>
+      </Head> */}
+      <MetaGenerator
+        page_title={page_title + " - " + site_settings?.site_name}
+        meta_desc={meta_desc}
+      />
       <main id="home__page">
-        <HeroSection />
-        <HowItWorksSection />
-        <ComparisonSection />
+        <HeroSection content={content} />
+        <HowItWorksSection content={content} />
+        <ComparisonSection content={content} comparisons={comparisons} />
         <TipsSection />
         <CtaSection />
         <TestimonialsSection />

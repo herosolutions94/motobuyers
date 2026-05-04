@@ -19,7 +19,7 @@ export const getServerSideProps = async (context) => {
       : "";
 
   const result = await http
-    .post("contact-page", doObjToFormData({ token: " " }))
+    .post("contact-page", doObjToFormData({ token: authToken }))
     .then((response) => response.data)
     .catch((error) => error.response.data.message);
 
@@ -28,7 +28,7 @@ export const getServerSideProps = async (context) => {
 export default function ContactPage({ result }) {
   console.log("result", result);
 
-  let { meta_desc, page_title, content, site_settings, cta_section } = result;
+  let { meta_desc, page_title, content, site_settings } = result;
 
   return (
     <>
@@ -49,10 +49,11 @@ export default function ContactPage({ result }) {
       />
       <main id="contact__page">
         <PageHeroBanner
-          title="We Look Forward to Hearing From You!"
-          subtitle="Selling your motorcycle has never been easier — and we're excited to make it a smooth ride for you!"
+          content={content}
+          // title={content?.sec1_card_text2}
+          // subtitle="Selling your motorcycle has never been easier — and we're excited to make it a smooth ride for you!"
         />
-        <ContactSection />
+        <ContactSection content={content} site_settings={site_settings} />
       </main>
     </>
   );
