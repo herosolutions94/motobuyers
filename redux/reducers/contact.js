@@ -32,6 +32,7 @@ export const saveContactQuery = createAsyncThunk(
 const initialState = {
   error: false,
   isFormProcessing: false,
+  isComplete: false,
   // hidePopup: false,
 };
 

@@ -117,7 +117,7 @@ export default function ContactSection() {
               <div className="validation-error" style={{ color: "red" }}>
                 {errors.email?.message}
               </div>
-              <input
+              {/* <input
                 type="text"
                 className="contact-form__input"
                 placeholder="Phone"
@@ -128,6 +128,22 @@ export default function ContactSection() {
                     message: "Please enter a valid phone number!",
                   },
                 })}
+              /> */}
+
+              <input
+                type="tel"
+                className="contact-form__input"
+                placeholder="Phone"
+                {...register("phone", {
+                  required: "Phone Number is required!",
+                  pattern: {
+                    value: /^\+?[0-9]{7,15}$/,
+                    message: "Enter valid phone number (7–15 digits)",
+                  },
+                })}
+                onInput={(e) => {
+                  e.target.value = e.target.value.replace(/[^+\d]/g, "");
+                }}
               />
               <div className="validation-error" style={{ color: "red" }}>
                 {errors.phone?.message}
@@ -140,16 +156,30 @@ export default function ContactSection() {
                   required: "Message is required.",
                 })}
               />
-              <div className="validation-error">
-                {errors.message?.message}
-              </div>
+              <div className="validation-error">{errors.message?.message}</div>
               <div className="contact-form__actions">
-                <button
+                {/* <button
                   type="submit"
                   disabled={isFormProcessing}
                   className="cta__btn cta__btn--primary"
                 >
                   Submit {isFormProcessing && <i className="spinner"></i>}
+                </button> */}
+
+                <button
+                  type="submit"
+                  disabled={isFormProcessing}
+                  className={`cta__btn cta__btn--primary ${
+                    isFormProcessing ? "cta__btn--disabled" : ""
+                  }`}
+                >
+                  {isFormProcessing ? (
+                    <>
+                      <i className="spinner"></i>
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
                 </button>
               </div>
             </form>
