@@ -1,9 +1,13 @@
+import Link from "next/link";
 import Contain from "./contain";
 import Heading from "./heading";
 import Paragraph from "./paragraph";
 import Section from "./section";
+import { cmsFileUrl } from "@/helpers/helpers";
+import Text from "./text";
 
-export default function CtaSection() {
+
+export default function CtaSection({content}) {
   return (
     <>
       <Section id="cta">
@@ -17,27 +21,35 @@ export default function CtaSection() {
           <div className="cta__inner">
             <div className="cta__text">
               <Heading className="main__heading">
-                Ready to sell your motorcycle the smart way?
+                {content?.section4_heading}
               </Heading>
               <Paragraph className="cta__desc">
-                Whether you've got questions or you're ready to
-                <br />
-                get started, we're here to help.
+                <Text string={content?.section4_text} />
               </Paragraph>
               <div className="cta__btn_wrap !mt-[3rem]">
-                <button className="cta__btn cta__btn--primary" type="button">
-                  GET STARTED
-                </button>
-                <button className="cta__btn cta__btn--dark" type="button">
-                  FAQ
-                </button>
-                <button className="cta__btn cta__btn--white" type="button">
-                  CONTACT US
-                </button>
+                <Link
+                  href={content?.section4_btn1_link}
+                  className="cta__btn cta__btn--primary"
+                >
+                  {content?.section4_btn1_txt}
+                </Link>
+                <Link
+                  href={content?.section4_btn2_link}
+                  className="cta__btn cta__btn--dark"
+                >
+                  {content?.section4_btn2_txt}
+                </Link>
+                <Link
+                  href={content?.section4_btn3_link}
+                  className="cta__btn cta__btn--white"
+                >
+                  {content?.section4_btn3_txt}
+                </Link>
               </div>
             </div>
             <div className="cta__visual">
-              <img src="/images/moto__app.png" alt="" />
+              {/* <img src="/images/moto__app.png" alt="" /> */}
+               <img src={cmsFileUrl(content?.image16)} alt="moto__app" />
             </div>
           </div>
         </Contain>

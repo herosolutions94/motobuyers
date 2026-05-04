@@ -61,9 +61,9 @@ export default function Final({ result }) {
         <HeroSection content={content} />
         <HowItWorksSection content={content} />
         <ComparisonSection content={content} comparisons={comparisons} />
-        <TipsSection />
-        <CtaSection />
-        <TestimonialsSection />
+        <TipsSection content={content} />
+        <CtaSection content={content} />
+        <TestimonialsSection page={'home'} content={content} testimonials={testimonials}  />
       </main>
     </>
   );

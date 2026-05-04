@@ -26,8 +26,6 @@ export const getServerSideProps = async (context) => {
   return { props: { result } };
 };
 export default function ContactPage({ result }) {
-  console.log("result", result);
-
   let { meta_desc, page_title, content, site_settings } = result;
 
   return (
@@ -49,9 +47,8 @@ export default function ContactPage({ result }) {
       />
       <main id="contact__page">
         <PageHeroBanner
-          content={content}
-          // title={content?.sec1_card_text2}
-          // subtitle="Selling your motorcycle has never been easier — and we're excited to make it a smooth ride for you!"
+          title={content?.banner_heading}
+          subtitle=<Text string={content?.banner_text} />
         />
         <ContactSection content={content} site_settings={site_settings} />
       </main>

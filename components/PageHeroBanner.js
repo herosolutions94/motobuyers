@@ -4,18 +4,17 @@ import Heading from "./heading";
 import Paragraph from "./paragraph";
 import Text from "./text";
 
-export default function PageHeroBanner({ content }) {
+export default function PageHeroBanner({ title, subtitle }) {
   return (
     <Section id="page-hero-banner">
       <Contain>
         <div className="page-hero-banner__content">
           <Heading className="page-hero-banner__title main__heading">
-            {content?.banner_heading}
+            {title}
           </Heading>
-          {content?.banner_text && (
+          {subtitle && (
             <Paragraph className="page-hero-banner__subtitle">
-              {/* {subtitle} */}
-              <Text string={content?.banner_text} />
+              {subtitle}
             </Paragraph>
           )}
         </div>

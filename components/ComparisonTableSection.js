@@ -6,47 +6,6 @@ import Section from "./section";
 import Text from "./text";
 
 export default function ComparisonSection({ content, comparisons }) {
-  console.log('comparisons',comparisons);
-  
-  const features = [
-    {
-      icon: "/images/cmp-icon-1.svg",
-      label: "Get an offer in minutes",
-      motoBuyers: true,
-      privateSale: false,
-    },
-    {
-      icon: "/images/cmp-icon-2.svg",
-      label: "We handle Paperwork",
-      motoBuyers: true,
-      privateSale: false,
-    },
-    {
-      icon: "/images/cmp-icon-3.svg",
-      label: "Secure transactions",
-      motoBuyers: true,
-      privateSale: "maybe",
-    },
-    {
-      icon: "/images/cmp-icon-4.svg",
-      label: "Will try to beat other offers",
-      motoBuyers: true,
-      privateSale: false,
-    },
-    {
-      icon: "/images/cmp-icon-5.svg",
-      label: "Transparent quote process",
-      motoBuyers: true,
-      privateSale: false,
-    },
-    {
-      icon: "/images/cmp-icon-6.svg",
-      label: "Full customer support",
-      motoBuyers: true,
-      privateSale: false,
-    },
-  ];
-
   return (
     <>
       <Section id="compare">
@@ -67,7 +26,6 @@ export default function ComparisonSection({ content, comparisons }) {
             </Paragraph>
           </div>
           <div className="compare_image">
-            {/* <img src="/images/moto_buyer_main_image.png" alt="" /> */}
             <img src={cmsFileUrl(content?.image10)} alt="Motorcycles" />
           </div>
           <div className="cmp__inner">
@@ -99,45 +57,55 @@ export default function ComparisonSection({ content, comparisons }) {
               </div>
 
               {/* Rows */}
-              {features.map((feature, idx) => (
-                <div key={idx} className="cmp__row" role="row">
-                  <div className="cmp__feat" role="cell">
-                    <img
-                      src={feature.icon}
-                      alt=""
-                      className="cmp__feat-icon"
-                      aria-hidden="true"
-                    />
-                    <span className="cmp__feat-label">{feature.label}</span>
-                  </div>
-                  <div className="cmp__cell cmp__cell--highlight" role="cell">
-                    {feature.motoBuyers ? (
+              {comparisons?.map((item, idx) => {
+                const renderStatus = (value) => {
+                  if (value === "yes" || value === "Yes") {
+                    return (
                       <img
                         src="/images/icon-check.svg"
                         alt="Yes"
                         className="cmp__check"
                       />
-                    ) : null}
-                  </div>
-                  <div className="cmp__cell" role="cell">
-                    {feature.privateSale === true ? (
-                      <img
-                        src="/images/icon-check.svg"
-                        alt="Yes"
-                        className="cmp__check"
-                      />
-                    ) : feature.privateSale === "maybe" ? (
-                      <span className="cmp__maybe">May be</span>
-                    ) : (
+                    );
+                  }
+
+                  if (value === "no" || value === "No") {
+                    return (
                       <img
                         src="/images/icon-cross.svg"
                         alt="No"
                         className="cmp__cross"
                       />
-                    )}
+                    );
+                  }
+
+                  // show actual value (e.g. "May be", "Maybe", "pending", etc.)
+                  return <span className="cmp__maybe">{value}</span>;
+                };
+                return (
+                  <div key={item.id ?? idx} className="cmp__row" role="row">
+                    <div className="cmp__feat" role="cell">
+                      <img
+                        src={cmsFileUrl(item.image)}
+                        alt=""
+                        className="cmp__feat-icon"
+                        aria-hidden="true"
+                      />
+                      <span className="cmp__feat-label">{item.title}</span>
+                    </div>
+
+                    {/* Moto Buyers (txt1) */}
+                    <div className="cmp__cell cmp__cell--highlight" role="cell">
+                      {renderStatus(item.txt1)}
+                    </div>
+
+                    {/* Private Sale (txt2) */}
+                    <div className="cmp__cell" role="cell">
+                      {renderStatus(item.txt2)}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </Contain>
