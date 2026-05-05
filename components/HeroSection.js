@@ -199,7 +199,7 @@ function VinHelpModal({ onClose, content }) {
           {content?.tab1_popup_heading}
         </h2>
         <p className="steps__modal-subtitle">
-          <Text string={content?.tab1_popup_txt}/>
+          <Text string={content?.tab1_popup_txt} />
         </p>
         <div className="steps__vin-cards">
           <div className="steps__vin-card">
@@ -230,6 +230,34 @@ function VinHelpModal({ onClose, content }) {
   );
 }
 
+function VideoModal({ onClose, videoUrl }) {
+  return (
+    <div className="steps__modal-overlay" onClick={onClose}>
+      <div
+        className="steps__modal steps__modal--wide"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="steps__modal-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          ✕
+        </button>
+
+        <div className="video__wrapper">
+          <video
+            src={videoUrl}
+            controls
+            autoPlay
+            style={{ width: "100%", borderRadius: "8px" }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── UnsupportedYearBanner ────────────────────────────────────────────────────
 function UnsupportedYearBanner() {
   return (
@@ -252,6 +280,7 @@ export const HERO_PREFILL_KEY = "motobuyers_step1_prefill";
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function HeroSection({ content }) {
   const router = useRouter();
+  const [showVideo, setShowVideo] = useState(false);
   const [activeTab, setActiveTab] = useState("vin");
   const [showVinHelp, setShowVinHelp] = useState(false);
   const [formError, setFormError] = useState("");
@@ -417,71 +446,6 @@ export default function HeroSection({ content }) {
     router.push("/steps");
   };
 
-  // const handleSubmit = () => {
-  //   setFormError("");
-
-  //   if (activeTab === "vin") {
-  //     if (!vinValid) {
-  //       setFormError("Please enter a valid 17-character VIN.");
-  //       return;
-  //     }
-  //     if (vinDecoding) {
-  //       setFormError("Please wait — decoding your VIN.");
-  //       return;
-  //     }
-  //     if (!vinDecodeSuccess) {
-  //       setFormError("VIN not recognized. Try switching to Year and Make.");
-  //       return;
-  //     }
-
-  //     sessionStorage.setItem(
-  //       HERO_PREFILL_KEY,
-  //       JSON.stringify({
-  //         tab: "vin",
-  //         vin: vinValue,
-  //         vehicleIdentified: vinDecoded.vehicleIdentified,
-  //         year: vinDecoded.year,
-  //         make: vinDecoded.make,
-  //         vinModel: vinDecoded.vinModel,
-  //       }),
-  //     );
-  //   } else {
-  //     if (!year) {
-  //       setFormError("Please select a year.");
-  //       return;
-  //     }
-  //     if (isUnsupportedYear) {
-  //       setFormError("We only accept motorcycles from 2003 or newer.");
-  //       return;
-  //     }
-  //     if (!make) {
-  //       setFormError("Please select a make.");
-  //       return;
-  //     }
-  //     if (!customMake.trim()) {
-  //       setFormError("Please enter the make.");
-  //       return;
-  //     }
-  //     if (!model.trim()) {
-  //       setFormError("Please enter the model.");
-  //       return;
-  //     }
-
-  //     sessionStorage.setItem(
-  //       HERO_PREFILL_KEY,
-  //       JSON.stringify({
-  //         tab: "make",
-  //         year,
-  //         make,
-  //         customMake: make === "other" ? customMake.trim() : "",
-  //         model,
-  //       }),
-  //     );
-  //   }
-
-  //   router.push("/steps");
-  // };
-
   return (
     <>
       <Section id="hero">
@@ -508,6 +472,7 @@ export default function HeroSection({ content }) {
                 aria-label="Watch video"
                 role="button"
                 tabIndex="0"
+                onClick={() => setShowVideo(true)}
               >
                 <div className="hero__play-inner">
                   <img
@@ -517,6 +482,20 @@ export default function HeroSection({ content }) {
                   />
                 </div>
               </div>
+              {/* <div
+                className="hero__play"
+                aria-label="Watch video"
+                role="button"
+                tabIndex="0"
+              >
+                <div className="hero__play-inner">
+                  <img
+                    src="/images/play-button.svg"
+                    alt="Play"
+                    className="hero__play-icon"
+                  />
+                </div>
+              </div> */}
             </div>
 
             <div
@@ -821,6 +800,12 @@ export default function HeroSection({ content }) {
 
       {showVinHelp && (
         <VinHelpModal onClose={() => setShowVinHelp(false)} content={content} />
+      )}
+      {showVideo && (
+        <VideoModal
+          onClose={() => setShowVideo(false)}
+          videoUrl={cmsFileUrl(content?.video1, "videos")}
+        />
       )}
     </>
   );
