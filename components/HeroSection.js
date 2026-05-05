@@ -808,5 +808,6 @@ export default function HeroSection({ content }) {
         />
       )}
     </>
+    
   );
 }
