@@ -4,7 +4,6 @@ import Text from "../text";
 import { cmsFileUrl } from "@/helpers/helpers";
 
 // ─── Custom Select ───────────────────────────────────────────────────────────
-// Each option can be: a plain value, or { value, label, italic, disabled, separator }
 function CustomSelect({ value, onChange, options, placeholder, error }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -138,14 +137,11 @@ async function decodeVin(vin) {
   const r = data.Results?.[0] ?? {};
   return {
     year: r.ModelYear || "",
-    make: r.Make || "", // return raw — matchMakeToOption handles casing
+    make: r.Make || "",
     model: r.Model || "",
   };
 }
 
-// Match raw API make (e.g. "HARLEY-DAVIDSON") to the exact option value
-// in MAKE_OPTIONS using case-insensitive comparison.
-// Returns the matched option string, or "other" if no match found.
 function matchMakeToOption(rawMake) {
   if (!rawMake) return "";
   const normalized = rawMake.trim().toLowerCase();
@@ -173,24 +169,8 @@ function VinErrorModal({ onClose }) {
           aria-label="Close"
         >
           <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <line
-              x1="18"
-              y1="6"
-              x2="6"
-              y2="18"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-            <line
-              x1="6"
-              y1="6"
-              x2="18"
-              y2="18"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
           </svg>
         </button>
         <div className="steps__modal-icon steps__modal-icon--warn">
@@ -201,15 +181,7 @@ function VinErrorModal({ onClose }) {
               strokeWidth="1.8"
               strokeLinejoin="round"
             />
-            <line
-              x1="12"
-              y1="8"
-              x2="12"
-              y2="13"
-              stroke="var(--color-red)"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
+            <line x1="12" y1="8" x2="12" y2="13" stroke="var(--color-red)" strokeWidth="2" strokeLinecap="round" />
             <circle cx="12" cy="16.5" r="1" fill="var(--color-red)" />
           </svg>
         </div>
@@ -218,12 +190,10 @@ function VinErrorModal({ onClose }) {
         </h2>
         <div className="steps__modal-rules">
           <p>
-            <span className="steps__modal-check">✓</span> A VIN cannot include
-            letters I, O, Q
+            <span className="steps__modal-check">✓</span> A VIN cannot include letters I, O, Q
           </p>
           <p>
-            <span className="steps__modal-check">✓</span> A VIN is made up of 17
-            characters
+            <span className="steps__modal-check">✓</span> A VIN is made up of 17 characters
           </p>
         </div>
         <p className="steps__modal-hint">
@@ -247,24 +217,8 @@ function VinHelpModal({ onClose, content }) {
           aria-label="Close"
         >
           <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <line
-              x1="18"
-              y1="6"
-              x2="6"
-              y2="18"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-            <line
-              x1="6"
-              y1="6"
-              x2="18"
-              y2="18"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
           </svg>
         </button>
         <h2 className="steps__modal-title steps__modal-title--left">
@@ -275,11 +229,8 @@ function VinHelpModal({ onClose, content }) {
         </p>
         <div className="steps__vin-cards">
           <div className="steps__vin-card">
-            <p className="steps__vin-card-title">
-              {content?.popup_card_heading3}
-            </p>
+            <p className="steps__vin-card-title">{content?.popup_card_heading3}</p>
             <p className="steps__vin-card-desc">{content?.popup_card_text3}</p>
-
             <img
               src={cmsFileUrl(content?.image3)}
               alt="Steering neck location"
@@ -287,9 +238,7 @@ function VinHelpModal({ onClose, content }) {
             />
           </div>
           <div className="steps__vin-card">
-            <p className="steps__vin-card-title">
-              {content?.popup_card_heading4}
-            </p>
+            <p className="steps__vin-card-title">{content?.popup_card_heading4}</p>
             <p className="steps__vin-card-desc">{content?.popup_card_text4}</p>
             <img
               src={cmsFileUrl(content?.image4)}
@@ -308,11 +257,9 @@ function UnsupportedYearBanner() {
   return (
     <div className="steps__unsupported-banner">
       <p className="steps__unsupported-label">OUTSIDE OUR CURRENT RANGE</p>
-
       <h3 className="steps__unsupported-heading">
         We are not currently buying motorcycles from before 2003.
       </h3>
-
       <p className="steps__unsupported-desc">
         We are sorry, and we really appreciate your interest in MotoBuyers. If
         you would like to check another motorcycle, you can start over below.
@@ -328,6 +275,7 @@ export default function Step1({ content }) {
     watch,
     setValue,
     control,
+    clearErrors,                          // ← added
     formState: { errors },
   } = useFormContext();
 
@@ -344,9 +292,6 @@ export default function Step1({ content }) {
   const [vinDecodeError, setVinDecodeError] = useState("");
   const [vinDecodeSuccess, setVinDecodeSuccess] = useState(false);
   const lastDecodedVin = useRef("");
-  // Only true after the user has actually typed in the VIN field this session.
-  // Prevents re-firing the API when navigating back to Step 1 with a
-  // previously valid VIN already in the form.
   const userHasTyped = useRef(false);
 
   const handleTab = (tab) => setValue("tab", tab, { shouldValidate: false });
@@ -355,8 +300,8 @@ export default function Step1({ content }) {
     if (vinValue && !vinValid) setShowVinError(true);
   };
 
-  // On mount: if we already have a valid VIN + vehicleIdentified in form state
-  // (e.g. user navigated back), restore the success state WITHOUT re-calling the API.
+  // On mount: restore success state if VIN + vehicleIdentified already exist
+  // (e.g. user navigated back) without re-calling the API.
   useEffect(() => {
     const existingIdentified = watch("vehicleIdentified");
     if (vinValid && existingIdentified && !vinDecodeSuccess) {
@@ -368,7 +313,6 @@ export default function Step1({ content }) {
 
   // Fire the NHTSA API only when the user has actively typed a valid VIN
   useEffect(() => {
-    // Skip if the user hasn't typed anything this render cycle
     if (!userHasTyped.current) return;
     if (!vinValid || vinValue === lastDecodedVin.current) return;
 
@@ -386,7 +330,6 @@ export default function Step1({ content }) {
         const matchedMake = matchMakeToOption(make);
         const displayMake =
           matchedMake && matchedMake !== "other" ? matchedMake : make;
-        // vehicleIdentified = year + make only (model has its own separate field)
         const identified = [year, displayMake].filter(Boolean).join(" ");
         if (!identified) {
           setVinDecodeError(
@@ -397,14 +340,13 @@ export default function Step1({ content }) {
         }
         setValue("vehicleIdentified", identified);
         setValue("year", year);
-        setValue("make", matchedMake); // sets Year & Make tab dropdown
-        // If make wasn't in the list, pre-fill customMake with the raw value
+        setValue("make", matchedMake);
         if (matchedMake === "other") {
           setValue("customMake", make);
         } else {
           setValue("customMake", "");
         }
-        setValue("vinModel", model); // model goes to its own editable field
+        setValue("vinModel", model);
         setVinDecodeError("");
         setVinDecodeSuccess(true);
       })
@@ -418,7 +360,6 @@ export default function Step1({ content }) {
       .finally(() => setVinDecoding(false));
   }, [vinValid, vinValue, setValue]);
 
-  // Year gate: block "before-2003" sentinel OR any numeric year < 2003
   const isUnsupportedYear =
     activeTab === "make" &&
     yearValue &&
@@ -426,7 +367,7 @@ export default function Step1({ content }) {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title"> {content?.step1_heading}</h1>
+      <h1 className="steps__title">{content?.step1_heading}</h1>
       <p className="steps__subtitle">
         <Text string={content?.step1_txt} />
       </p>
@@ -466,9 +407,7 @@ export default function Step1({ content }) {
                 maxLength={17}
                 onBlur={handleVinBlur}
                 onChange={(e) => {
-                  // Mark that the user has actively typed — enables API decode
                   userHasTyped.current = true;
-                  // Reset decode state when user edits the VIN
                   setVinDecodeError("");
                   setVinDecodeSuccess(false);
                   lastDecodedVin.current = "";
@@ -487,13 +426,7 @@ export default function Step1({ content }) {
                     width="20"
                     height="20"
                   >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="#d1d5db"
-                      strokeWidth="2.5"
-                    />
+                    <circle cx="12" cy="12" r="10" stroke="#d1d5db" strokeWidth="2.5" />
                     <path
                       d="M12 2a10 10 0 0 1 10 10"
                       stroke="var(--color-red, #dc2626)"
@@ -523,24 +456,8 @@ export default function Step1({ content }) {
                 <span className="steps__input-valid-icon">
                   <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
                     <circle cx="12" cy="12" r="10" fill="#dc2626" />
-                    <line
-                      x1="8"
-                      y1="8"
-                      x2="16"
-                      y2="16"
-                      stroke="#fff"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                    />
-                    <line
-                      x1="16"
-                      y1="8"
-                      x2="8"
-                      y2="16"
-                      stroke="#fff"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                    />
+                    <line x1="8" y1="8" x2="16" y2="16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+                    <line x1="16" y1="8" x2="8" y2="16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
                   </svg>
                 </span>
               )}
@@ -548,8 +465,6 @@ export default function Step1({ content }) {
             {errors.vin && (
               <p className="steps__field-error">{errors.vin.message}</p>
             )}
-
-            {/* API decode error — shown inline below the input */}
             {vinDecodeError && !errors.vin && (
               <p className="steps__field-error" style={{ marginTop: "0.4rem" }}>
                 {vinDecodeError}
@@ -562,34 +477,13 @@ export default function Step1({ content }) {
               onClick={() => setShowVinHelp(true)}
             >
               {content?.tab1_popup_label}
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                width="16"
-                height="16"
-                aria-hidden="true"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                />
-                <line
-                  x1="12"
-                  y1="8"
-                  x2="12"
-                  y2="12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 <circle cx="12" cy="16" r="1" fill="currentColor" />
               </svg>
             </button>
 
-            {/* Vehicle Identified + Model — only shown after a successful decode */}
             {vinDecodeSuccess && (
               <>
                 <label
@@ -604,7 +498,6 @@ export default function Step1({ content }) {
                   className="steps__input steps__input--readonly"
                   readOnly
                 />
-
                 <label
                   className="steps__field-label !-mb-[10px]"
                   style={{ marginTop: "1.2rem" }}
@@ -652,7 +545,6 @@ export default function Step1({ content }) {
               <p className="steps__field-error">{errors.year.message}</p>
             )}
 
-            {/* Unsupported year — hard block, hide rest of form */}
             {isUnsupportedYear && <UnsupportedYearBanner />}
 
             {!isUnsupportedYear && (
@@ -672,8 +564,11 @@ export default function Step1({ content }) {
                       value={field.value}
                       onChange={(v) => {
                         field.onChange(v);
-                        // Clear customMake when switching away from Other
-                        if (v !== "other") setValue("customMake", "");
+                        // Always clear customMake error when make changes
+                        clearErrors("customMake");
+                        if (v !== "other") {
+                          setValue("customMake", "");
+                        }
                       }}
                       options={MAKE_OPTIONS}
                       placeholder="Choose make"
@@ -697,6 +592,7 @@ export default function Step1({ content }) {
                     <input
                       {...register("customMake", {
                         required: "Please enter the make",
+                        shouldUnregister: true,   // ← clears error when field unmounts
                       })}
                       type="text"
                       className={`steps__input${errors.customMake ? " steps__input--error" : ""}`}

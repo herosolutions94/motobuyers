@@ -1,30 +1,14 @@
 import Text from "../text";
 
-const NEXT_STEPS = [
-  {
-    num: 1,
-    title: "Review",
-    desc: "Our team reviews the information and any photos you uploaded.",
-  },
-  {
-    num: 2,
-    title: "Reach out",
-    desc: "We contact you if we need anything else to finish the appraisal.",
-  },
-  {
-    num: 3,
-    title: "Offer",
-    desc: "You receive an offer and can decide if you want to move forward.",
-  },
-  {
-    num: 4,
-    title: "Schedule",
-    desc: "If it is a fit, we coordinate the next step and paperwork.",
-  },
-];
-
-export default function Step8({ bikeLabel, content, thank_steps, firstName }) {
+export default function Step8({
+  bikeLabel,
+  content,
+  thank_steps,
+  firstName,
+  onStartOver,
+}) {
   const name = firstName ? firstName.trim() : "";
+
   return (
     <div className="steps__section">
       <h1 className="steps__title steps__title--italic">
@@ -40,7 +24,6 @@ export default function Step8({ bikeLabel, content, thank_steps, firstName }) {
         )}
       </h1>
       <p className="steps__subtitle">
-        {/* Showing: <strong>{bikeLabel}</strong> */}
         <Text string={content?.step7_txt} />
       </p>
 
@@ -59,15 +42,24 @@ export default function Step8({ bikeLabel, content, thank_steps, firstName }) {
           </ol>
 
           <div className="steps__confirm-note">
-            {/* <span className="steps__confirm-note-icon">&#9203;</span> */}
             <div>
               <p>
-                {" "}
                 <Text string={content?.step6_txt2} />
               </p>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Start Over ── */}
+      <div style={{ textAlign: "center", marginTop: "2rem" }}>
+        <button
+          type="button"
+          className="steps__btn-continue"
+          onClick={onStartOver}
+        >
+          Start Over
+        </button>
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useFormContext, Controller } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import Text from "../text";
 
 const MAX = 5000;
@@ -48,7 +47,6 @@ function TireCard({ label, value, unknown, onSlide, onToggleUnknown }) {
         ) : (
           <span className="steps__tire-slide-hint">Slide to set range</span>
         )}
-        {/* value > 0 ? (<span className="steps__tire-value">{value.toLocaleString()} mi</span> */}
       </div>
 
       <div className="steps__tire-card-slider">
@@ -73,7 +71,11 @@ function TireCard({ label, value, unknown, onSlide, onToggleUnknown }) {
 }
 
 export default function Step4d({ content }) {
-  const { watch, setValue } = useFormContext();
+  const {
+    watch,
+    setValue,
+    formState: { errors },   // ← added to display validation error
+  } = useFormContext();
 
   const frontMiles = watch("frontTireMiles") ?? 0;
   const rearMiles = watch("rearTireMiles") ?? 0;
@@ -103,6 +105,16 @@ export default function Step4d({ content }) {
           onToggleUnknown={() => setValue("rearTireNotSure", !rearUnknown)}
         />
       </div>
+
+      {/* Validation error shown when user tries to continue without setting tires */}
+      {errors.tireMileage && (
+        <p
+          className="steps__field-error"
+          style={{ marginTop: "1rem", textAlign: "center" }}
+        >
+          {errors.tireMileage.message}
+        </p>
+      )}
     </div>
   );
 }

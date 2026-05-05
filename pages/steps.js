@@ -45,18 +45,18 @@ export const getServerSideProps = async (context) => {
 
 // ─── Step IDs ────────────────────────────────────────────────────────────────
 const STEP_IDS = [
-  "bike-id", // 1
-  "vehicle-details", // 2
-  "cosmetic-rating", // 3
-  "cosmetic-issues", // 3A  — skipped if cosmetic === 5
-  "mech-rating", // 4
-  "mech-issues", // 4B  — skipped if mechanical === 5
-  "service-maint", // 4C  — always shown
-  "tire-mileage", // 4D  — skipped if mileage < 1000
-  "title-financial", // 5
-  "photos", // 6
-  "contact-submit", // 7
-  "thank-you", // 8
+  "bike-id",          // 1
+  "vehicle-details",  // 2
+  "cosmetic-rating",  // 3
+  "cosmetic-issues",  // 3A  — skipped if cosmetic === 5
+  "mech-rating",      // 4
+  "mech-issues",      // 4B  — skipped if mechanical === 5
+  "service-maint",    // 4C  — always shown
+  "tire-mileage",     // 4D  — skipped if mileage < 1000
+  "title-financial",  // 5
+  "photos",           // 6
+  "contact-submit",   // 7
+  "thank-you",        // 8
 ];
 
 // ─── Dynamic sequence builder ────────────────────────────────────────────────
@@ -124,6 +124,7 @@ const PROGRESS_MAP = {
 
 export default function StepsPage({ result }) {
   let { meta_desc, page_title, content, site_settings, thank_steps } = result;
+
   const methods = useForm({
     mode: "onTouched",
     defaultValues: {
@@ -133,9 +134,9 @@ export default function StepsPage({ result }) {
       vehicleIdentified: "",
       year: "",
       make: "",
-      vinModel: "", // model from VIN path (pre-filled, editable)
-      model: "", // model from Year & Make path (free-text, required)
-      customMake: "", // free-text make when "Other" is selected
+      vinModel: "",
+      model: "",
+      customMake: "",
       // Step 2
       mileage: "",
       zip: "",
@@ -193,23 +194,19 @@ export default function StepsPage({ result }) {
   const sequence = buildSequence(valuesObj);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // ─── Read hero prefill from sessionStorage on mount ─────────────────────
+  // ─── Read hero prefill from sessionStorage on mount ──────────────────────
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(HERO_PREFILL_KEY);
       if (!raw) return;
-      sessionStorage.removeItem(HERO_PREFILL_KEY); // consume once
+      sessionStorage.removeItem(HERO_PREFILL_KEY);
 
       const prefill = JSON.parse(raw);
 
-      // Populate all relevant RHF fields
       Object.entries(prefill).forEach(([key, value]) => {
         methods.setValue(key, value, { shouldValidate: false });
       });
 
-      // Jump straight to Step 2 ("vehicle-details")
-      // We need to find its index in the current sequence.
-      // Build a fresh sequence with the incoming values so skip-logic is correct.
       const freshSeq = buildSequence({
         cosmetic: null,
         mechanical: null,
@@ -222,18 +219,18 @@ export default function StepsPage({ result }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   const currentStepId = sequence[currentIndex];
   const progress = PROGRESS_MAP[currentStepId] ?? 0;
   const isLastStep = currentStepId === "thank-you";
   const isSubmitStep = currentStepId === "contact-submit";
   const isPhotosStep = currentStepId === "photos";
 
-  // ─── Validation rules per step ──────────────────────────────────────────
+  // ─── Validation rules per step ───────────────────────────────────────────
   const STEP_FIELDS = {
     "bike-id": async (vals) => {
       const tab = vals.tab;
       if (tab === "vin") return await trigger("vin");
-      // Hard block on unsupported year — don't even try to advance
       const yr = vals.year;
       if (yr === "before-2003" || (yr && parseInt(yr, 10) < 2003)) return false;
       const fields = ["year", "make", "model"];
@@ -242,7 +239,6 @@ export default function StepsPage({ result }) {
     },
     "vehicle-details": () => trigger(["mileage", "zip", "ridden", "email"]),
     "cosmetic-rating": () => trigger("cosmetic"),
-    // Must pick at least one checkbox OR one circle option
     "cosmetic-issues": () => {
       const vals = methods.getValues();
       const hasSelection =
@@ -261,7 +257,6 @@ export default function StepsPage({ result }) {
       return true;
     },
     "mech-rating": () => trigger("mechanical"),
-    // Must pick at least one checkbox OR no-issues
     "mech-issues": () => {
       const vals = methods.getValues();
       const hasSelection =
@@ -279,7 +274,6 @@ export default function StepsPage({ result }) {
       methods.clearErrors("mechanicalIssues");
       return true;
     },
-    // Must pick at least one service item OR one circle option
     "service-maint": () => {
       const vals = methods.getValues();
       const hasSelection =
@@ -296,7 +290,22 @@ export default function StepsPage({ result }) {
       methods.clearErrors("serviceItems");
       return true;
     },
-    "tire-mileage": () => true,
+    // ── Step 4D: both tires must have a mileage value OR be toggled unknown ──
+    "tire-mileage": () => {
+      const vals = methods.getValues();
+      const frontDone = vals.frontTireNotSure || vals.frontTireMiles > 0;
+      const rearDone  = vals.rearTireNotSure  || vals.rearTireMiles  > 0;
+      if (!frontDone || !rearDone) {
+        methods.setError("tireMileage", {
+          type: "manual",
+          message:
+            "Please set the mileage or toggle \"I don't know\" for each tire",
+        });
+        return false;
+      }
+      methods.clearErrors("tireMileage");
+      return true;
+    },
     "title-financial": () => trigger(["titleType", "hasLoan"]),
     photos: () => true,
     "contact-submit": () => trigger(["firstName", "phone", "contactEmail"]),
@@ -314,6 +323,12 @@ export default function StepsPage({ result }) {
     setCurrentIndex((i) => Math.max(i - 1, 0));
   }, []);
 
+  // ─── Start Over: reset form and jump back to Step 1 ─────────────────────
+  const handleStartOver = useCallback(() => {
+    methods.reset();
+    setCurrentIndex(0);
+  }, [methods]);
+
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -323,7 +338,7 @@ export default function StepsPage({ result }) {
     try {
       const { appraisalId } = await submitAppraisal(data);
       console.log("=== MotoBuyers Submission saved ===", appraisalId, data);
-      setCurrentIndex(sequence.length - 1); // go to thank-you
+      setCurrentIndex(sequence.length - 1);
     } catch (err) {
       setSubmitError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -340,6 +355,7 @@ export default function StepsPage({ result }) {
   };
 
   const allValues = watch();
+
   const bikeLabel = (() => {
     const tab = allValues.tab;
     if (tab === "vin" && allValues.year && allValues.make) {
@@ -399,6 +415,13 @@ export default function StepsPage({ result }) {
         v.serviceOtherChecked ||
         v.serviceCircleOption
       );
+    // ── Step 4D: both tires must be set or toggled unknown ──
+    if (currentStepId === "tire-mileage") {
+      return (
+        (v.frontTireNotSure || v.frontTireMiles > 0) &&
+        (v.rearTireNotSure  || v.rearTireMiles  > 0)
+      );
+    }
     if (currentStepId === "title-financial")
       return !!(v.titleType && v.hasLoan);
     if (currentStepId === "contact-submit")
@@ -440,9 +463,7 @@ export default function StepsPage({ result }) {
               <div
                 className="steps__progress-bike"
                 style={{ left: `${progress}%` }}
-              >
-                {/* <img src="/images/sakootar.png" alt="motorcycle" /> */}
-              </div>
+              />
             </div>
           </Contain>
         </div>
@@ -486,6 +507,7 @@ export default function StepsPage({ result }) {
               content={content}
               thank_steps={thank_steps}
               firstName={allValues.firstName}
+              onStartOver={handleStartOver}     // ← wired up
             />
           )}
         </Contain>
@@ -542,7 +564,3 @@ export default function StepsPage({ result }) {
     </FormProvider>
   );
 }
-
-// export async function getServerSideProps() {
-//   return { props: {} };
-// }
