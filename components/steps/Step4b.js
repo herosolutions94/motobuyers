@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
+import Text from "../text";
 
 const MECHANICAL_ISSUES = [
   "Engine or transmission issue",
@@ -17,7 +18,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-export default function Step4b() {
+export default function Step4b({content}) {
   const { watch, setValue, getValues, formState: { errors } } = useFormContext();
   const inputRef = useRef(null);
   const [overflowAt, setOverflowAt] = useState(() => {
@@ -58,8 +59,8 @@ export default function Step4b() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">What mechanical issues are you aware of?</h1>
-      <p className="steps__subtitle">Select all that apply.</p>
+      <h1 className="steps__title">{content?.step4b_heading}</h1>
+      <p className="steps__subtitle"><Text string={content?.step4b_txt} /></p>
 
       <div className="steps__single-col">
         <div className="steps__checkbox-list">

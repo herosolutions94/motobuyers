@@ -42,17 +42,6 @@ export default function Final({ result }) {
   } = result;
   return (
     <>
-      {/* <Head>
-        <title>MotoBuyers – Sell Your Motorcycle Just Got Easier</title>
-        <meta
-          name="description"
-          content="Get a customized offer for your motorcycle from one of our appraisers."
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-          rel="stylesheet"
-        />
-      </Head> */}
       <MetaGenerator
         page_title={page_title + " - " + site_settings?.site_name}
         meta_desc={meta_desc}
@@ -60,10 +49,18 @@ export default function Final({ result }) {
       <main id="home__page">
         <HeroSection content={content} />
         <HowItWorksSection content={content} />
-        <ComparisonSection content={content} comparisons={comparisons} />
+        <ComparisonSection
+          page={"home"}
+          content={content}
+          comparisons={comparisons}
+        />
         <TipsSection content={content} />
-        <CtaSection content={content} />
-        <TestimonialsSection page={'home'} content={content} testimonials={testimonials}  />
+        <CtaSection page={"home"} content={content} />
+        <TestimonialsSection
+          page={"home"}
+          content={content}
+          testimonials={testimonials}
+        />
       </main>
     </>
   );

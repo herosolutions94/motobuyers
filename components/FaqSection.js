@@ -2,6 +2,7 @@ import { useState } from "react";
 import Section from "./section";
 import Contain from "./contain";
 import Heading from "./heading";
+import Text from "./text";
 
 function FaqItem({ question, answer }) {
   const [open, setOpen] = useState(false);
@@ -34,7 +35,12 @@ function FaqItem({ question, answer }) {
           )}
         </span>
       </button>
-      {open && <p className="faq__answer">{answer}</p>}
+      {open && (
+        <p className="faq__answer">
+          {" "}
+          <Text string={answer} />
+        </p>
+      )}
     </div>
   );
 }

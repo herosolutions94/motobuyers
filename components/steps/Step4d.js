@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useFormContext, Controller } from "react-hook-form";
+import Text from "../text";
 
 const MAX = 5000;
 const STEP = 500;
@@ -44,12 +45,10 @@ function TireCard({ label, value, unknown, onSlide, onToggleUnknown }) {
               ? `${MAX.toLocaleString()}+ mi`
               : `${value.toLocaleString()} mi`}
           </span>
-
         ) : (
           <span className="steps__tire-slide-hint">Slide to set range</span>
         )}
         {/* value > 0 ? (<span className="steps__tire-value">{value.toLocaleString()} mi</span> */}
-
       </div>
 
       <div className="steps__tire-card-slider">
@@ -73,7 +72,7 @@ function TireCard({ label, value, unknown, onSlide, onToggleUnknown }) {
   );
 }
 
-export default function Step4d() {
+export default function Step4d({ content }) {
   const { watch, setValue } = useFormContext();
 
   const frontMiles = watch("frontTireMiles") ?? 0;
@@ -83,11 +82,9 @@ export default function Step4d() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">
-        About how many miles are on the current tires?
-      </h1>
+      <h1 className="steps__title">{content?.step4d_heading}</h1>
       <p className="steps__subtitle">
-        Approximate is fine. This helps us understand remaining life.
+        <Text string={content?.step4d_txt} />
       </p>
 
       <div className="steps__tire-grid">

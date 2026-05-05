@@ -199,7 +199,7 @@ function VinHelpModal({ onClose, content }) {
           {content?.tab1_popup_heading}
         </h2>
         <p className="steps__modal-subtitle">
-          <Text string={content?.tab1_popup_txt} parse={true} />
+          <Text string={content?.tab1_popup_txt}/>
         </p>
         <div className="steps__vin-cards">
           <div className="steps__vin-card">

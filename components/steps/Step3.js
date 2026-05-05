@@ -43,7 +43,7 @@ function Stars({ count }) {
   );
 }
 
-export default function Step3() {
+export default function Step3({ content }) {
   const {
     control,
     formState: { errors },
@@ -51,9 +51,7 @@ export default function Step3() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">
-        How would you rate the cosmetic condition?
-      </h1>
+      <h1 className="steps__title">{content?.step3_heading}</h1>
 
       <div className="steps__single-col">
         <Controller

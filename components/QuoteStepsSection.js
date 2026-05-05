@@ -2,6 +2,8 @@ import Section from "./section";
 import Contain from "./contain";
 import Heading from "./heading";
 import Paragraph from "./paragraph";
+import Text from "@/components/text";
+import { cmsFileUrl } from "@/helpers/helpers";
 
 const QUOTE_STEPS = [
   {
@@ -34,34 +36,39 @@ const QUOTE_STEPS = [
   },
 ];
 
-export default function QuoteStepsSection() {
+export default function QuoteStepsSection({ content, quote_steps }) {
   return (
     <Section id="quote-steps">
       <Contain>
         <div className="quote-steps__header">
           <Heading as="h2" className="quote-steps__title">
-            How We Quote Your Motorcycle
+            {content?.section1_heading}
           </Heading>
           <Paragraph className="quote-steps__subtitle">
-            When you share the essential details about your bike — including the year, make, model, mileage, and condition — our team steps in to determine its true market value. Here&apos;s our process
+            <Text string={content?.section1_text} />
           </Paragraph>
         </div>
         <div className="quote-steps__list">
-          {QUOTE_STEPS.map((step, idx) => (
+          {quote_steps.map((step, idx) => (
             <div
-              key={step.step}
+              key={step?.id}
               className={`quote-steps__item${idx % 2 !== 0 ? " quote-steps__item--reverse" : ""}`}
             >
               <div className="quote-steps__body">
-                <span className="quote-steps__badge">{step.step}</span>
+                <span className="quote-steps__badge">
+                  {"Step " + step?.order_no}
+                </span>
                 <Heading as="h3" className="quote-steps__name">
-                  {step.title}
+                  {step?.title}
                 </Heading>
-                <Paragraph className="quote-steps__desc">{step.desc}</Paragraph>
+                <Paragraph className="quote-steps__desc">
+                  {" "}
+                  <Text string={step?.txt1} />
+                </Paragraph>
               </div>
 
               <div className="quote-steps__media">
-                <img src={step.img} alt={step.alt} />
+                <img src={cmsFileUrl(step?.image)} alt={step?.title} />
               </div>
             </div>
           ))}

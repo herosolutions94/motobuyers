@@ -1,3 +1,5 @@
+import Text from "../text";
+
 const NEXT_STEPS = [
   {
     num: 1,
@@ -21,32 +23,36 @@ const NEXT_STEPS = [
   },
 ];
 
-export default function Step8({ bikeLabel, firstName }) {
+export default function Step8({ bikeLabel, content, thank_steps, firstName }) {
   const name = firstName ? firstName.trim() : "";
-
   return (
     <div className="steps__section">
       <h1 className="steps__title steps__title--italic">
         {name ? (
-          <>Thank you, {name} &mdash; we&apos;ve got everything we need!</>
+          <>
+            {content?.step7_heading}, {name} &mdash;{" "}
+            {content?.step7_heading_aft}
+          </>
         ) : (
-          <>Thanks &mdash; we&apos;ve got everything we need!</>
+          <>
+            {content?.step7_heading} &mdash; {content?.step7_heading_aft}
+          </>
         )}
       </h1>
       <p className="steps__subtitle">
         {/* Showing: <strong>{bikeLabel}</strong> */}
-        Your motorcycle details have been submitted.
+        <Text string={content?.step7_txt} />
       </p>
 
       <div className="steps__single-col">
         <div className="steps__form-card">
           <ol className="steps__confirm-list">
-            {NEXT_STEPS.map((s) => (
-              <li key={s.num} className="steps__confirm-item">
-                <span className="steps__confirm-num">{s.num}</span>
+            {thank_steps.map((s) => (
+              <li key={s?.id} className="steps__confirm-item">
+                <span className="steps__confirm-num">{s?.order_no}</span>
                 <div>
-                  <strong className="steps__confirm-title">{s.title}</strong>
-                  <p className="steps__confirm-desc">{s.desc}</p>
+                  <strong className="steps__confirm-title">{s?.title}</strong>
+                  <p className="steps__confirm-desc">{s?.txt1}</p>
                 </div>
               </li>
             ))}
@@ -56,8 +62,8 @@ export default function Step8({ bikeLabel, firstName }) {
             {/* <span className="steps__confirm-note-icon">&#9203;</span> */}
             <div>
               <p>
-                Need help right away? Contact MotoBuyers support and include
-                your phone number so we can find your submission quickly.
+                {" "}
+                <Text string={content?.step6_txt2} />
               </p>
             </div>
           </div>

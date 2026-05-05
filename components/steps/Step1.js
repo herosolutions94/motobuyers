@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useFormContext, Controller } from "react-hook-form";
+import Text from "../text";
+import { cmsFileUrl } from "@/helpers/helpers";
 
 // ─── Custom Select ───────────────────────────────────────────────────────────
 // Each option can be: a plain value, or { value, label, italic, disabled, separator }
@@ -16,7 +18,8 @@ function CustomSelect({ value, onChange, options, placeholder, error }) {
   }, []);
 
   const selected = options.find(
-    (o) => !o?.separator && !o?.disabled && String(o?.value ?? o) === String(value)
+    (o) =>
+      !o?.separator && !o?.disabled && String(o?.value ?? o) === String(value),
   );
   const label = selected ? (selected.label ?? selected) : null;
 
@@ -27,10 +30,20 @@ function CustomSelect({ value, onChange, options, placeholder, error }) {
         className={`steps__custom-select__trigger${label ? " steps__custom-select__trigger--has-value" : ""}${open ? " steps__custom-select__trigger--open" : ""}${error ? " steps__input--error" : ""}`}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="steps__custom-select__label">{label ?? placeholder}</span>
-        <span className={`steps__custom-select__chevron${open ? " steps__custom-select__chevron--open" : ""}`}>
+        <span className="steps__custom-select__label">
+          {label ?? placeholder}
+        </span>
+        <span
+          className={`steps__custom-select__chevron${open ? " steps__custom-select__chevron--open" : ""}`}
+        >
           <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <polyline points="6 9 12 15 18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <polyline
+              points="6 9 12 15 18 9"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </span>
       </button>
@@ -38,7 +51,12 @@ function CustomSelect({ value, onChange, options, placeholder, error }) {
         <div className="steps__custom-select__dropdown">
           {options.map((opt, idx) => {
             if (opt?.separator) {
-              return <div key={`sep-${idx}`} className="steps__custom-select__separator" />;
+              return (
+                <div
+                  key={`sep-${idx}`}
+                  className="steps__custom-select__separator"
+                />
+              );
             }
             const v = String(opt?.value ?? opt);
             const l = opt?.label ?? opt;
@@ -49,10 +67,14 @@ function CustomSelect({ value, onChange, options, placeholder, error }) {
                 key={v}
                 className={[
                   "steps__custom-select__option",
-                  v === String(value) ? "steps__custom-select__option--selected" : "",
+                  v === String(value)
+                    ? "steps__custom-select__option--selected"
+                    : "",
                   isDisabled ? "steps__custom-select__option--disabled" : "",
                   isItalic ? "steps__custom-select__option--italic" : "",
-                ].join(" ").trim()}
+                ]
+                  .join(" ")
+                  .trim()}
                 onMouseDown={() => {
                   if (isDisabled) return;
                   onChange(v);
@@ -109,15 +131,15 @@ const MAKE_OPTIONS = [
 // ─── NHTSA VIN decode ────────────────────────────────────────────────────────
 async function decodeVin(vin) {
   const res = await fetch(
-    `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValuesExtended/${vin}?format=json`
+    `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValuesExtended/${vin}?format=json`,
   );
   if (!res.ok) throw new Error("Network error");
   const data = await res.json();
   const r = data.Results?.[0] ?? {};
   return {
-    year:  r.ModelYear || "",
-    make:  r.Make      || "",   // return raw — matchMakeToOption handles casing
-    model: r.Model     || "",
+    year: r.ModelYear || "",
+    make: r.Make || "", // return raw — matchMakeToOption handles casing
+    model: r.Model || "",
   };
 }
 
@@ -145,52 +167,135 @@ function VinErrorModal({ onClose }) {
   return (
     <div className="steps__modal-overlay" onClick={onClose}>
       <div className="steps__modal" onClick={(e) => e.stopPropagation()}>
-        <button className="steps__modal-close" onClick={onClose} aria-label="Close">
+        <button
+          className="steps__modal-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
           <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            <line
+              x1="18"
+              y1="6"
+              x2="6"
+              y2="18"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+            <line
+              x1="6"
+              y1="6"
+              x2="18"
+              y2="18"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
           </svg>
         </button>
         <div className="steps__modal-icon steps__modal-icon--warn">
           <svg viewBox="0 0 24 24" fill="none" width="40" height="40">
-            <path d="M12 2l2.4 2.4L17 3l1 2.7 2.9.3-.3 2.9L23 11l-1.7 2.4.9 2.8-2.8.9-.3 2.9-2.9-.3L14 22l-2-1.7L10 22l-1.9-2.2-2.9.3-.3-2.9-2.8-.9.9-2.8L1 11l1.7-2.1-.3-2.9 2.9-.3L6.9 3l2.7 1z" stroke="var(--color-red)" strokeWidth="1.8" strokeLinejoin="round" />
-            <line x1="12" y1="8" x2="12" y2="13" stroke="var(--color-red)" strokeWidth="2" strokeLinecap="round" />
+            <path
+              d="M12 2l2.4 2.4L17 3l1 2.7 2.9.3-.3 2.9L23 11l-1.7 2.4.9 2.8-2.8.9-.3 2.9-2.9-.3L14 22l-2-1.7L10 22l-1.9-2.2-2.9.3-.3-2.9-2.8-.9.9-2.8L1 11l1.7-2.1-.3-2.9 2.9-.3L6.9 3l2.7 1z"
+              stroke="var(--color-red)"
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+            />
+            <line
+              x1="12"
+              y1="8"
+              x2="12"
+              y2="13"
+              stroke="var(--color-red)"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
             <circle cx="12" cy="16.5" r="1" fill="var(--color-red)" />
           </svg>
         </div>
-        <h2 className="steps__modal-title">Uh-Oh, We Can&apos;t Decode This VIN Number</h2>
+        <h2 className="steps__modal-title">
+          Uh-Oh, We Can&apos;t Decode This VIN Number
+        </h2>
         <div className="steps__modal-rules">
-          <p><span className="steps__modal-check">✓</span> A VIN cannot include letters I, O, Q</p>
-          <p><span className="steps__modal-check">✓</span> A VIN is made up of 17 characters</p>
+          <p>
+            <span className="steps__modal-check">✓</span> A VIN cannot include
+            letters I, O, Q
+          </p>
+          <p>
+            <span className="steps__modal-check">✓</span> A VIN is made up of 17
+            characters
+          </p>
         </div>
-        <p className="steps__modal-hint">Please try again or enter make &amp; model instead</p>
+        <p className="steps__modal-hint">
+          Please try again or enter make &amp; model instead
+        </p>
       </div>
     </div>
   );
 }
 
-function VinHelpModal({ onClose }) {
+function VinHelpModal({ onClose, content }) {
   return (
     <div className="steps__modal-overlay" onClick={onClose}>
-      <div className="steps__modal steps__modal--wide" onClick={(e) => e.stopPropagation()}>
-        <button className="steps__modal-close" onClick={onClose} aria-label="Close">
+      <div
+        className="steps__modal steps__modal--wide"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="steps__modal-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
           <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            <line
+              x1="18"
+              y1="6"
+              x2="6"
+              y2="18"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+            <line
+              x1="6"
+              y1="6"
+              x2="18"
+              y2="18"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
           </svg>
         </button>
-        <h2 className="steps__modal-title steps__modal-title--left">Where to find your VIN?</h2>
-        <p className="steps__modal-subtitle">You can usually find the VIN on the steering neck, engine casing, or registration documents.</p>
+        <h2 className="steps__modal-title steps__modal-title--left">
+          {content?.tab1_popup_heading}
+        </h2>
+        <p className="steps__modal-subtitle">
+          <Text string={content?.tab1_popup_txt} />
+        </p>
         <div className="steps__vin-cards">
           <div className="steps__vin-card">
-            <p className="steps__vin-card-title">Steering neck</p>
-            <p className="steps__vin-card-desc">Stamped on the front of the frame, just behind the handlebars.</p>
-            <img src="/images/bikes.png" alt="Steering neck location" className="steps__vin-card-img" />
+            <p className="steps__vin-card-title">
+              {content?.popup_card_heading3}
+            </p>
+            <p className="steps__vin-card-desc">{content?.popup_card_text3}</p>
+
+            <img
+              src={cmsFileUrl(content?.image3)}
+              alt="Steering neck location"
+              className="steps__vin-card-img"
+            />
           </div>
           <div className="steps__vin-card">
-            <p className="steps__vin-card-title">Engine casing</p>
-            <p className="steps__vin-card-desc">Engraved on the side of the engine</p>
-            <img src="/images/bikes.png" alt="Engine casing location" className="steps__vin-card-img" />
+            <p className="steps__vin-card-title">
+              {content?.popup_card_heading4}
+            </p>
+            <p className="steps__vin-card-desc">{content?.popup_card_text4}</p>
+            <img
+              src={cmsFileUrl(content?.image4)}
+              alt="Engine casing location"
+              className="steps__vin-card-img"
+            />
           </div>
         </div>
       </div>
@@ -217,7 +322,7 @@ function UnsupportedYearBanner() {
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-export default function Step1() {
+export default function Step1({ content }) {
   const {
     register,
     watch,
@@ -258,7 +363,7 @@ export default function Step1() {
       setVinDecodeSuccess(true);
       lastDecodedVin.current = vinValue;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fire the NHTSA API only when the user has actively typed a valid VIN
@@ -279,29 +384,34 @@ export default function Step1() {
     decodeVin(vinValue)
       .then(({ year, make, model }) => {
         const matchedMake = matchMakeToOption(make);
-        const displayMake = matchedMake && matchedMake !== "other" ? matchedMake : make;
+        const displayMake =
+          matchedMake && matchedMake !== "other" ? matchedMake : make;
         // vehicleIdentified = year + make only (model has its own separate field)
         const identified = [year, displayMake].filter(Boolean).join(" ");
         if (!identified) {
-          setVinDecodeError("VIN not recognized. Try switching to Year and Make.");
+          setVinDecodeError(
+            "VIN not recognized. Try switching to Year and Make.",
+          );
           setVinDecodeSuccess(false);
           return;
         }
         setValue("vehicleIdentified", identified);
         setValue("year", year);
-        setValue("make", matchedMake);   // sets Year & Make tab dropdown
+        setValue("make", matchedMake); // sets Year & Make tab dropdown
         // If make wasn't in the list, pre-fill customMake with the raw value
         if (matchedMake === "other") {
           setValue("customMake", make);
         } else {
           setValue("customMake", "");
         }
-        setValue("vinModel", model);  // model goes to its own editable field
+        setValue("vinModel", model); // model goes to its own editable field
         setVinDecodeError("");
         setVinDecodeSuccess(true);
       })
       .catch(() => {
-        setVinDecodeError("VIN not recognized. Try switching to Year and Make.");
+        setVinDecodeError(
+          "VIN not recognized. Try switching to Year and Make.",
+        );
         setVinDecodeSuccess(false);
         setValue("vehicleIdentified", "");
       })
@@ -316,9 +426,9 @@ export default function Step1() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">Let&apos;s start with your motorcycle</h1>
+      <h1 className="steps__title"> {content?.step1_heading}</h1>
       <p className="steps__subtitle">
-        Use your VIN for the fastest path, or enter the year and make if you do not have it nearby.
+        <Text string={content?.step1_txt} />
       </p>
 
       <div className="steps__single-col">
@@ -347,7 +457,8 @@ export default function Step1() {
             <div className="steps__input-icon-wrap">
               <input
                 {...register("vin", {
-                  validate: (v) => isValidVin(v) || "Please enter a valid 17-character VIN",
+                  validate: (v) =>
+                    isValidVin(v) || "Please enter a valid 17-character VIN",
                 })}
                 type="text"
                 className={`steps__input${vinValid && vinDecodeSuccess ? " steps__input--valid" : ""}${errors.vin || vinDecodeError ? " steps__input--error" : ""}`}
@@ -361,15 +472,34 @@ export default function Step1() {
                   setVinDecodeError("");
                   setVinDecodeSuccess(false);
                   lastDecodedVin.current = "";
-                  setValue("vin", e.target.value.toUpperCase(), { shouldValidate: true });
+                  setValue("vin", e.target.value.toUpperCase(), {
+                    shouldValidate: true,
+                  });
                 }}
               />
               {/* Spinning while decoding */}
               {vinValid && vinDecoding && (
                 <span className="steps__input-valid-icon">
-                  <svg className="steps__vin-spinner" viewBox="0 0 24 24" fill="none" width="20" height="20">
-                    <circle cx="12" cy="12" r="10" stroke="#d1d5db" strokeWidth="2.5" />
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--color-red, #dc2626)" strokeWidth="2.5" strokeLinecap="round" />
+                  <svg
+                    className="steps__vin-spinner"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    width="20"
+                    height="20"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="#d1d5db"
+                      strokeWidth="2.5"
+                    />
+                    <path
+                      d="M12 2a10 10 0 0 1 10 10"
+                      stroke="var(--color-red, #dc2626)"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </span>
               )}
@@ -378,7 +508,13 @@ export default function Step1() {
                 <span className="steps__input-valid-icon">
                   <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
                     <circle cx="12" cy="12" r="10" fill="#22c55e" />
-                    <polyline points="7,12 10.5,15.5 17,9" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    <polyline
+                      points="7,12 10.5,15.5 17,9"
+                      stroke="#fff"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </span>
               )}
@@ -387,24 +523,68 @@ export default function Step1() {
                 <span className="steps__input-valid-icon">
                   <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
                     <circle cx="12" cy="12" r="10" fill="#dc2626" />
-                    <line x1="8" y1="8" x2="16" y2="16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-                    <line x1="16" y1="8" x2="8" y2="16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+                    <line
+                      x1="8"
+                      y1="8"
+                      x2="16"
+                      y2="16"
+                      stroke="#fff"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1="16"
+                      y1="8"
+                      x2="8"
+                      y2="16"
+                      stroke="#fff"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </span>
               )}
             </div>
-            {errors.vin && <p className="steps__field-error">{errors.vin.message}</p>}
+            {errors.vin && (
+              <p className="steps__field-error">{errors.vin.message}</p>
+            )}
 
             {/* API decode error — shown inline below the input */}
             {vinDecodeError && !errors.vin && (
-              <p className="steps__field-error" style={{ marginTop: "0.4rem" }}>{vinDecodeError}</p>
+              <p className="steps__field-error" style={{ marginTop: "0.4rem" }}>
+                {vinDecodeError}
+              </p>
             )}
 
-            <button type="button" className="steps__vin-link" onClick={() => setShowVinHelp(true)}>
-              Where to find your VIN
-              <svg viewBox="0 0 24 24" fill="none" width="16" height="16" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <button
+              type="button"
+              className="steps__vin-link"
+              onClick={() => setShowVinHelp(true)}
+            >
+              {content?.tab1_popup_label}
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                width="16"
+                height="16"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+                <line
+                  x1="12"
+                  y1="8"
+                  x2="12"
+                  y2="12"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
                 <circle cx="12" cy="16" r="1" fill="currentColor" />
               </svg>
             </button>
@@ -412,7 +592,10 @@ export default function Step1() {
             {/* Vehicle Identified + Model — only shown after a successful decode */}
             {vinDecodeSuccess && (
               <>
-                <label className="steps__field-label !mb-[0]" style={{ marginTop: "1rem" }}>
+                <label
+                  className="steps__field-label !mb-[0]"
+                  style={{ marginTop: "1rem" }}
+                >
                   Vehicle identified
                 </label>
                 <input
@@ -422,8 +605,15 @@ export default function Step1() {
                   readOnly
                 />
 
-                <label className="steps__field-label !-mb-[10px]" style={{ marginTop: "1.2rem" }}>Model</label>
-                <p className="steps__field-hint !mb-[0]">Pre-filled from VIN — update if needed</p>
+                <label
+                  className="steps__field-label !-mb-[10px]"
+                  style={{ marginTop: "1.2rem" }}
+                >
+                  Model
+                </label>
+                <p className="steps__field-hint !mb-[0]">
+                  Pre-filled from VIN — update if needed
+                </p>
                 <input
                   {...register("vinModel")}
                   type="text"
@@ -458,14 +648,21 @@ export default function Step1() {
                 />
               )}
             />
-            {errors.year && <p className="steps__field-error">{errors.year.message}</p>}
+            {errors.year && (
+              <p className="steps__field-error">{errors.year.message}</p>
+            )}
 
             {/* Unsupported year — hard block, hide rest of form */}
             {isUnsupportedYear && <UnsupportedYearBanner />}
 
             {!isUnsupportedYear && (
               <>
-                <label className="steps__field-label !mb-[0]" style={{ marginTop: "1.2rem" }}>Make</label>
+                <label
+                  className="steps__field-label !mb-[0]"
+                  style={{ marginTop: "1.2rem" }}
+                >
+                  Make
+                </label>
                 <Controller
                   name="make"
                   control={control}
@@ -484,35 +681,51 @@ export default function Step1() {
                     />
                   )}
                 />
-                {errors.make && <p className="steps__field-error">{errors.make.message}</p>}
+                {errors.make && (
+                  <p className="steps__field-error">{errors.make.message}</p>
+                )}
 
                 {/* "Enter Make" free-text — shown only when Other is selected */}
                 {watch("make") === "other" && (
                   <>
-                    <label className="steps__field-label !mb-[0]" style={{ marginTop: "1rem" }}>
+                    <label
+                      className="steps__field-label !mb-[0]"
+                      style={{ marginTop: "1rem" }}
+                    >
                       Enter Make
                     </label>
                     <input
-                      {...register("customMake", { required: "Please enter the make" })}
+                      {...register("customMake", {
+                        required: "Please enter the make",
+                      })}
                       type="text"
                       className={`steps__input${errors.customMake ? " steps__input--error" : ""}`}
                       placeholder="e.g. Aprilia, MV Agusta, Benelli…"
                       autoFocus
                     />
                     {errors.customMake && (
-                      <p className="steps__field-error">{errors.customMake.message}</p>
+                      <p className="steps__field-error">
+                        {errors.customMake.message}
+                      </p>
                     )}
                   </>
                 )}
 
-                <label className="steps__field-label !mb-[0]" style={{ marginTop: "1.2rem" }}>Model</label>
+                <label
+                  className="steps__field-label !mb-[0]"
+                  style={{ marginTop: "1.2rem" }}
+                >
+                  Model
+                </label>
                 <input
                   {...register("model", { required: "Please enter the model" })}
                   type="text"
                   className={`steps__input${errors.model ? " steps__input--error" : ""}`}
                   placeholder="e.g. CBR600RR, Ninja 650, MT-07…"
                 />
-                {errors.model && <p className="steps__field-error">{errors.model.message}</p>}
+                {errors.model && (
+                  <p className="steps__field-error">{errors.model.message}</p>
+                )}
               </>
             )}
           </div>
@@ -520,7 +733,9 @@ export default function Step1() {
       </div>
 
       {showVinError && <VinErrorModal onClose={() => setShowVinError(false)} />}
-      {showVinHelp && <VinHelpModal onClose={() => setShowVinHelp(false)} />}
+      {showVinHelp && (
+        <VinHelpModal onClose={() => setShowVinHelp(false)} content={content} />
+      )}
     </div>
   );
 }

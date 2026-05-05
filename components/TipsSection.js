@@ -7,31 +7,7 @@ import { cmsFileUrl } from "@/helpers/helpers";
 import Link from "next/link";
 
 export default function TipsSection({ content }) {
-  // const tips = [
-  //   {
-  //     icon: "/images/tips-icon-1.svg",
-  //     label: "You enter your VIN or motorcycle",
-  //     desc: "Just enter your motorcycle's VIN, or select it's year, make & model.",
-  //   },
-  //   {
-  //     icon: "/images/tips-icon-2.svg",
-  //     label: "We check ownership & condition history",
-  //     desc: "We review your motorcycle's history to ensure accurate pricing.",
-  //   },
-  //   {
-  //     icon: "/images/tips-icon-3.svg",
-  //     label: "We analyze current market demand & pricing",
-  //     desc: "Our team compares your motorcycle with similar models currently on the market.",
-  //   },
-  //   {
-  //     icon: "/images/tips-icon-4.svg",
-  //     label: "You receive a real, ready-to-go offer",
-  //     desc: "Get a personalized, no-obligation offer sent straight to your inbox—ready when you are.",
-  //   },
-  // ];
-
   const tips = [12, 13, 14, 15];
-
   return (
     <>
       <Section id="tips">
@@ -72,7 +48,13 @@ export default function TipsSection({ content }) {
             ))}
           </div>
           <div className="cta__btn_wrap justify-center">
-            <Link href={content?.section3_btn_link} className="cta__btn" type="button">
+            <Link
+              href={
+                content?.section3_btn_link ? content.section3_btn_link : "/"
+              }
+              className="cta__btn"
+              type="button"
+            >
               {content?.section3_btn_txt}
             </Link>
           </div>

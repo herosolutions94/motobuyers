@@ -29,7 +29,7 @@ function CheckIcon() {
   );
 }
 
-export default function Step5() {
+export default function Step5({ content }) {
   const {
     watch,
     setValue,
@@ -46,7 +46,7 @@ export default function Step5() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">Title and financial details</h1>
+      <h1 className="steps__title">{content?.step5_heading}</h1>
 
       <div className="steps__single-col">
         {/* ── Card 1: Title type ── */}
@@ -149,10 +149,10 @@ export default function Step5() {
                     setValue("payoffAmount", "");
                   }}
                 >
-                  <span className={`steps__not-sure-icon ${notSurePayoff ? "steps__not-sure-icon--active" : ""}`}>
-                    {notSurePayoff && (
-                      <CheckIcon />
-                    )}
+                  <span
+                    className={`steps__not-sure-icon ${notSurePayoff ? "steps__not-sure-icon--active" : ""}`}
+                  >
+                    {notSurePayoff && <CheckIcon />}
                   </span>
                   Not sure
                 </button>
@@ -194,10 +194,10 @@ export default function Step5() {
                 setValue("askingPrice", "");
               }}
             >
-              <span className={`steps__not-sure-icon ${notSurePrice ? "steps__not-sure-icon--active" : ""}`}>
-                {notSurePrice && (
-                  <CheckIcon />
-                )}
+              <span
+                className={`steps__not-sure-icon ${notSurePrice ? "steps__not-sure-icon--active" : ""}`}
+              >
+                {notSurePrice && <CheckIcon />}
               </span>
               Not sure
             </button>

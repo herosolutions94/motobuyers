@@ -1,7 +1,8 @@
 import { useFormContext } from "react-hook-form";
 import InputMask from "react-input-mask";
+import Text from "../text";
 
-export default function Step7() {
+export default function Step7({ content }) {
   const {
     register,
     formState: { errors },
@@ -9,9 +10,9 @@ export default function Step7() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">How can we reach you?</h1>
+      <h1 className="steps__title">{content?.step6_heading}</h1>
       <p className="steps__subtitle">
-        We will use this information to follow up with your appraisal.
+        <Text string={content?.step6_txt} />
       </p>
 
       <div className="steps__single-col">

@@ -1,6 +1,6 @@
 import { useFormContext, Controller } from "react-hook-form";
 
-export default function Step2() {
+export default function Step2({ content }) {
   const {
     register,
     watch,
@@ -12,7 +12,7 @@ export default function Step2() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">Tell us a bit more about your bike</h1>
+      <h1 className="steps__title">{content?.step2_heading}</h1>
 
       <div className="steps__single-col">
         <div className="steps__form-card">

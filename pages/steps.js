@@ -18,6 +18,31 @@ import Step8 from "../components/steps/Step8";
 import { submitAppraisal } from "../lib/submitAppraisal";
 import { HERO_PREFILL_KEY } from "../components/HeroSection";
 
+import http from "@/helpers/http";
+import { parse } from "cookie";
+import { doObjToFormData } from "@/helpers/helpers";
+import MetaGenerator from "@/components/meta-generator";
+import Text from "@/components/text";
+
+export const getServerSideProps = async (context) => {
+  const { req } = context;
+  const cookieHeader = req.headers.cookie || "";
+  const cookieValue = parse(cookieHeader);
+  const authToken =
+    cookieValue["authToken"] !== undefined &&
+    cookieValue["authToken"] !== null &&
+    cookieValue["authToken"] !== ""
+      ? cookieValue["authToken"]
+      : "";
+
+  const result = await http
+    .post("steps-page", doObjToFormData({ token: authToken }))
+    .then((response) => response.data)
+    .catch((error) => error.response.data.message);
+
+  return { props: { result } };
+};
+
 // ─── Step IDs ────────────────────────────────────────────────────────────────
 const STEP_IDS = [
   "bike-id", // 1
@@ -97,7 +122,8 @@ const PROGRESS_MAP = {
   "thank-you": 100,
 };
 
-export default function StepsPage() {
+export default function StepsPage({ result }) {
+  let { meta_desc, page_title, content, site_settings, thank_steps } = result;
   const methods = useForm({
     mode: "onTouched",
     defaultValues: {
@@ -380,30 +406,23 @@ export default function StepsPage() {
     return true;
   })();
 
-  const continueBtnLabel = currentStepId === "bike-id"
-    ? "Get my Offer"
-    : isPhotosStep
-      ? hasPhotos
-        ? "Continue"
-        : "Skip for now"
-      : isSubmitStep
-        ? "Submit for Appraisal"
-        : "Continue";
+  const continueBtnLabel =
+    currentStepId === "bike-id"
+      ? "Get my Offer"
+      : isPhotosStep
+        ? hasPhotos
+          ? "Continue"
+          : "Skip for now"
+        : isSubmitStep
+          ? "Submit for Appraisal"
+          : "Continue";
 
   return (
     <FormProvider {...methods}>
-      <Head>
-        <title>Get My Offer – MotoBuyers</title>
-
-        <meta
-          name="description"
-          content="A simple process. A real offer. A smooth ride to instant cash."
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-          rel="stylesheet"
-        />
-      </Head>
+      <MetaGenerator
+        page_title={page_title + " - " + site_settings?.site_name}
+        meta_desc={meta_desc}
+      />
       <main id="steps__page">
         {/* Progress Bar */}
         <div className="steps__progress-bar">
@@ -430,31 +449,44 @@ export default function StepsPage() {
 
         {/* Step Content */}
         <Contain className="!z-[auto]">
-          {currentStepId === "bike-id" && <Step1 bikeLabel={bikeLabel} />}
+          {currentStepId === "bike-id" && (
+            <Step1 bikeLabel={bikeLabel} content={content} />
+          )}
           {currentStepId === "vehicle-details" && (
-            <Step2 bikeLabel={bikeLabel} />
+            <Step2 bikeLabel={bikeLabel} content={content} />
           )}
           {currentStepId === "cosmetic-rating" && (
-            <Step3 bikeLabel={bikeLabel} />
+            <Step3 bikeLabel={bikeLabel} content={content} />
           )}
           {currentStepId === "cosmetic-issues" && (
-            <Step3b bikeLabel={bikeLabel} />
+            <Step3b bikeLabel={bikeLabel} content={content} />
           )}
-          {currentStepId === "mech-rating" && <Step4 bikeLabel={bikeLabel} />}
-          {currentStepId === "mech-issues" && <Step4b bikeLabel={bikeLabel} />}
+          {currentStepId === "mech-rating" && (
+            <Step4 bikeLabel={bikeLabel} content={content} />
+          )}
+          {currentStepId === "mech-issues" && (
+            <Step4b bikeLabel={bikeLabel} content={content} />
+          )}
           {currentStepId === "service-maint" && (
-            <Step4c bikeLabel={bikeLabel} />
+            <Step4c bikeLabel={bikeLabel} content={content} />
           )}
-          {currentStepId === "tire-mileage" && <Step4d bikeLabel={bikeLabel} />}
+          {currentStepId === "tire-mileage" && (
+            <Step4d bikeLabel={bikeLabel} content={content} />
+          )}
           {currentStepId === "title-financial" && (
-            <Step5 bikeLabel={bikeLabel} />
+            <Step5 bikeLabel={bikeLabel} content={content} />
           )}
-          {currentStepId === "photos" && <Step6 />}
+          {currentStepId === "photos" && <Step6 content={content} />}
           {currentStepId === "contact-submit" && (
-            <Step7 bikeLabel={bikeLabel} />
+            <Step7 bikeLabel={bikeLabel} content={content} />
           )}
           {currentStepId === "thank-you" && (
-            <Step8 bikeLabel={bikeLabel} firstName={allValues.firstName} />
+            <Step8
+              bikeLabel={bikeLabel}
+              content={content}
+              thank_steps={thank_steps}
+              firstName={allValues.firstName}
+            />
           )}
         </Contain>
 
@@ -511,6 +543,6 @@ export default function StepsPage() {
   );
 }
 
-export async function getServerSideProps() {
-  return { props: {} };
-}
+// export async function getServerSideProps() {
+//   return { props: {} };
+// }

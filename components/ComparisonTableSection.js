@@ -5,7 +5,20 @@ import Paragraph from "./paragraph";
 import Section from "./section";
 import Text from "./text";
 
-export default function ComparisonSection({ content, comparisons }) {
+export default function ComparisonSection({ page, content, comparisons }) {
+  let heading = "";
+  let text = "";
+
+  if (page === "home") {
+    heading = content?.section2_heading;
+    text = content?.section2_text;
+  } else if (page === "compare") {
+    heading = content?.section1_heading;
+    text = content?.section1_text;
+  } else {
+    heading = "Moto Buyers vs. Private Sale";
+    text = "See why Moto Buyers is the smarter choice";
+  }
   return (
     <>
       <Section id="compare">
@@ -18,15 +31,18 @@ export default function ComparisonSection({ content, comparisons }) {
         ></div>
         <Contain>
           <div className="content text-center !mb-[5rem]">
-            <Heading className="main__heading">
-              {content?.section2_heading}
-            </Heading>
+            <Heading className="main__heading">{heading}</Heading>
             <Paragraph className="cmp__subtitle">
-              <Text string={content?.section2_text} parse={true} />
+              <Text string={text} />
             </Paragraph>
           </div>
           <div className="compare_image">
-            <img src={cmsFileUrl(content?.image10)} alt="Motorcycles" />
+            <img
+              src={cmsFileUrl(
+                page === "home" ? content?.image10 : content?.image1,
+              )}
+              alt="Motorcycles"
+            />
           </div>
           <div className="cmp__inner">
             <div

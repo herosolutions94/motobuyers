@@ -4,28 +4,53 @@ import QuoteStepsSection from "../components/QuoteStepsSection";
 import QuoteDisagreeSection from "../components/QuoteDisagreeSection";
 import CtaSection from "../components/CtaSection";
 
-export default function QuotePage() {
+import http from "@/helpers/http";
+import { parse } from "cookie";
+import { doObjToFormData } from "@/helpers/helpers";
+import MetaGenerator from "@/components/meta-generator";
+import Text from "@/components/text";
+
+export const getServerSideProps = async (context) => {
+  const { req } = context;
+  const cookieHeader = req.headers.cookie || "";
+  const cookieValue = parse(cookieHeader);
+  const authToken =
+    cookieValue["authToken"] !== undefined &&
+    cookieValue["authToken"] !== null &&
+    cookieValue["authToken"] !== ""
+      ? cookieValue["authToken"]
+      : "";
+
+  const result = await http
+    .post("quote-page", doObjToFormData({ token: authToken }))
+    .then((response) => response.data)
+    .catch((error) => error.response.data.message);
+
+  return { props: { result } };
+};
+
+export default function QuotePage({ result }) {
+  let {
+    meta_desc,
+    page_title,
+    content,
+    site_settings,
+    quote_steps,
+  } = result;
   return (
     <>
-      <Head>
-        <title>Frequently Asked Questions – MotoBuyers</title>
-        <meta
-          name="description"
-          content="A simple process. A real offer. A smooth ride to instant cash."
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-          rel="stylesheet"
-        />
-      </Head>
+      <MetaGenerator
+        page_title={page_title + " - " + site_settings?.site_name}
+        meta_desc={meta_desc}
+      />
       <main id="quote__page">
         <PageHeroBanner
-          title="How Do We Determine Your Motorcycle’s Value?"
-          subtitle="Ever wonder how different buyers decide what your motorcycle is worth? Every buyer has their own method — and the truth is, motorcycle values fluctuate often, influenced by local demand, seasonality, condition, and model popularity."
+          title={content?.banner_heading}
+          subtitle=<Text string={content?.banner_text} />
         />
-        <QuoteStepsSection />
-        <QuoteDisagreeSection />
-        <CtaSection />
+        <QuoteStepsSection content={content} quote_steps={quote_steps} />
+        <QuoteDisagreeSection content={content} />
+        <CtaSection page={"quote"} content={content} />
       </main>
     </>
   );

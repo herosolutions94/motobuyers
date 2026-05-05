@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import { useFormContext, Controller } from "react-hook-form";
+import Text from "../text";
+
 
 const COSMETIC_ISSUES = [
   "Scratches or scuffs",
@@ -14,7 +16,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-export default function Step3b() {
+export default function Step3b({content}) {
   const { watch, setValue, getValues, formState: { errors } } = useFormContext();
   const inputRef = useRef(null);
   const [overflowAt, setOverflowAt] = useState(() => {
@@ -55,8 +57,8 @@ export default function Step3b() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">What cosmetic issues should we know about?</h1>
-      <p className="steps__subtitle">Select all that apply, or let us know if none of these fit.</p>
+      <h1 className="steps__title">{content?.step3b_heading}</h1>
+      <p className="steps__subtitle"><Text string={content?.step3b_txt} /></p>
 
       <div className="steps__single-col">
         <div className="steps__checkbox-list">

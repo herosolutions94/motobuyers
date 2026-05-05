@@ -2,6 +2,8 @@ import Section from "./section";
 import Contain from "./contain";
 import Heading from "./heading";
 import Paragraph from "./paragraph";
+import Text from "./text";
+import { cmsFileUrl } from "@/helpers/helpers";
 
 const CARDS = [
   {
@@ -21,32 +23,36 @@ const CARDS = [
   },
 ];
 
-export default function QuoteDisagreeSection() {
+export default function QuoteDisagreeSection({ content }) {
+  const CARDS = [1, 2, 3];
+
   return (
     <Section id="quote-disagree">
       <div className="quote-disagree__wave"></div>
       <Contain>
         <div className="disagree__header">
           <Heading as="h2" className="disagree__title">
-            What If You Don&apos;t Agree with Our Offer?
+            {content?.section2_heading}
           </Heading>
           <Paragraph className="disagree__subtitle">
-            We understand that you might have a different idea of what your
-            motorcycle is worth. If our offer doesn&apos;t match your
-            expectations, here are a few common reasons why there could be a
-            difference
+            <Text string={content?.section2_text} />
           </Paragraph>
         </div>
         <div className="disagree__cards">
-          {CARDS.map((card) => (
-            <div key={card.title} className="disagree__card">
+          {CARDS.map((i) => (
+            <div key={i} className="disagree__card">
               <div className="disagree__icon">
-                <img src={card.icon} alt={card.title} />
+                <img
+                  src={cmsFileUrl(content?.[`image${i}`])}
+                  alt={content?.[`sec2_card_heading${i}`]}
+                />
               </div>
               <Heading as="h3" className="disagree__card-title">
-                {card.title}
+                {content?.[`sec2_card_heading${i}`]}
               </Heading>
-              <Paragraph className="disagree__card-desc">{card.desc}</Paragraph>
+              <Paragraph className="disagree__card-desc">
+                {content?.[`sec2_card_text${i}`]}
+              </Paragraph>
             </div>
           ))}
         </div>

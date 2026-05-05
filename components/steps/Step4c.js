@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
+import Text from "../text";
 
 const SERVICE_ITEMS = [
   "Valve adjustment or major service",
@@ -9,10 +10,7 @@ const SERVICE_ITEMS = [
   "Battery or charging system",
 ];
 
-const CIRCLE_OPTIONS = [
-  "No service or maintenance required",
-  "Not sure",
-];
+const CIRCLE_OPTIONS = ["No service or maintenance required", "Not sure"];
 
 function CircleBox({ active }) {
   return (
@@ -24,12 +22,23 @@ function CircleBox({ active }) {
 
 const CheckIcon = () => (
   <svg viewBox="0 0 12 10" fill="none" width="12" height="10">
-    <polyline points="1,5 4.5,8.5 11,1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <polyline
+      points="1,5 4.5,8.5 11,1"
+      stroke="#fff"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
-export default function Step4c() {
-  const { watch, setValue, getValues, formState: { errors } } = useFormContext();
+export default function Step4c({ content }) {
+  const {
+    watch,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useFormContext();
   const inputRef = useRef(null);
   const [overflowAt, setOverflowAt] = useState(() => {
     const checked = getValues("serviceOtherChecked");
@@ -69,8 +78,11 @@ export default function Step4c() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">Are any of these service or maintenance items due?</h1>
-      <p className="steps__subtitle">Select all that apply.</p>
+      <h1 className="steps__title">{content?.step4c_heading}</h1>
+      <p className="steps__subtitle">
+        {" "}
+        <Text string={content?.step4c_txt} />
+      </p>
 
       <div className="steps__single-col">
         <div className="steps__form-card">
@@ -83,7 +95,9 @@ export default function Step4c() {
                   className={`steps__checkbox-row ${checked ? "steps__checkbox-row--active" : ""}`}
                   onClick={() => toggle(item)}
                 >
-                  <span className="steps__checkbox-box">{checked && <CheckIcon />}</span>
+                  <span className="steps__checkbox-box">
+                    {checked && <CheckIcon />}
+                  </span>
                   <span className="steps__checkbox-label">{item}</span>
                 </label>
               );
@@ -94,7 +108,9 @@ export default function Step4c() {
               className={`steps__checkbox-row ${otherChecked ? "steps__checkbox-row--active" : ""}`}
               onClick={toggleOther}
             >
-              <span className="steps__checkbox-box">{otherChecked && <CheckIcon />}</span>
+              <span className="steps__checkbox-box">
+                {otherChecked && <CheckIcon />}
+              </span>
               {otherChecked ? (
                 isExpanded ? (
                   <textarea
@@ -107,7 +123,8 @@ export default function Step4c() {
                     onChange={(e) => {
                       setValue("serviceOtherText", e.target.value);
                       setValue("serviceCircleOption", "");
-                      if (e.target.value.length < overflowAt) setOverflowAt(null);
+                      if (e.target.value.length < overflowAt)
+                        setOverflowAt(null);
                     }}
                   />
                 ) : (
@@ -121,7 +138,11 @@ export default function Step4c() {
                     onChange={(e) => {
                       setValue("serviceOtherText", e.target.value);
                       setValue("serviceCircleOption", "");
-                      if (inputRef.current && inputRef.current.scrollWidth > inputRef.current.clientWidth) {
+                      if (
+                        inputRef.current &&
+                        inputRef.current.scrollWidth >
+                          inputRef.current.clientWidth
+                      ) {
                         setOverflowAt(e.target.value.length);
                       }
                     }}

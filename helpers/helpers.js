@@ -4,6 +4,8 @@ import axios from "axios";
 // import FormData from "form-data";
 // import variables from "styles/globals.module.scss";
 import http from "./http";
+import parse from "html-react-parser";
+
 
 export function doObjToFormData(obj) {
   let formData = new FormData();
@@ -324,3 +326,7 @@ export const makeExternalUrl = (url) => {
 
   return url;
 };
+
+export function doParseHTML(string) {
+  return parse(string);
+}

@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
+import Text from "../text";
 
-export default function Step6() {
+export default function Step6({ content }) {
   const { watch, setValue } = useFormContext();
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -32,9 +33,9 @@ export default function Step6() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">Add photos of your motorcycle</h1>
+      <h1 className="steps__title">{content?.step5b_heading}</h1>
       <p className="steps__subtitle">
-        Our data shows that photos improve offer accuracy by up to 25%.
+        <Text string={content?.step5b_txt} />
       </p>
 
       <div className="steps__single-col">
@@ -60,14 +61,11 @@ export default function Step6() {
               </svg>
             </span>
             <div>
-              <p className="steps__upload-title">Upload photos</p>
+              <p className="steps__upload-title">{content?.step5b_heading2}</p>
               <p className="steps__upload-title steps__upload-title-mobile">
                 Choose photos
               </p>
-              <p className="steps__upload-hint">
-                Drag photos here or browse your computer. Uploads start
-                immediately in the background.
-              </p>
+              <p className="steps__upload-hint">{content?.step5b_txt2}</p>
               <p className="steps__upload-hint steps__upload-hint-mobile">
                 Upload from your library, or open the camera for a fresh shot.
               </p>

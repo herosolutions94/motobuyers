@@ -1,4 +1,5 @@
 import { useFormContext, Controller } from "react-hook-form";
+import Text from "../text";
 
 const MECHANICAL_RATINGS = [
   {
@@ -43,7 +44,7 @@ function Stars({ count }) {
   );
 }
 
-export default function Step4() {
+export default function Step4({ content }) {
   const {
     control,
     formState: { errors },
@@ -51,11 +52,9 @@ export default function Step4() {
 
   return (
     <div className="steps__section">
-      <h1 className="steps__title">
-        How would you rate the mechanical condition?
-      </h1>
+      <h1 className="steps__title">{content?.step4_heading}</h1>
       <p className="steps__subtitle">
-        Engine, transmission, electronics, and how the bike runs overall.
+        <Text string={content?.step4_txt} />
       </p>
 
       <div className="steps__single-col">
