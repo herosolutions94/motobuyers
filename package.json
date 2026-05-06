@@ -25,6 +25,7 @@
     "react-hot-toast": "^2.6.0",
     "react-input-mask": "^2.0.4",
     "react-redux": "^9.2.0",
+    "react-slick": "^0.31.0",
     "sass": "^1.66.1",
     "scss": "^0.2.4"
   },

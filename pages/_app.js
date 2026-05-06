@@ -4,6 +4,7 @@ import http from "../helpers/http";
 import NextNProgress from "nextjs-progressbar";
 import Layout from "../components/layout";
 import "../styles/css/tailwind.min.css";
+import "../styles/css/slick.min.css";
 import "../styles/scss/final.generic.scss";
 import { Toaster } from "react-hot-toast";
 import { Provider } from "react-redux";

@@ -75,22 +75,24 @@ export default function EasiestWaySection({ content }) {
         </div>
 
         {/* Dots */}
-        <div
-          className="easiest__dots"
-          role="tablist"
-          aria-label="Slide navigation"
-        >
-          {CARDS.map((_, i) => (
-            <button
-              key={i}
-              className={`easiest__dot${active === i ? " easiest__dot--active" : ""}`}
-              onClick={() => setActive(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              role="tab"
-              aria-selected={active === i}
-            />
-          ))}
-        </div>
+        {CARDS.length > 3 && (
+          <div
+            className="easiest__dots"
+            role="tablist"
+            aria-label="Slide navigation"
+          >
+            {CARDS.map((_, i) => (
+              <button
+                key={i}
+                className={`easiest__dot${active === i ? " easiest__dot--active" : ""}`}
+                onClick={() => setActive(i)}
+                aria-label={`Go to slide ${i + 1}`}
+                role="tab"
+                aria-selected={active === i}
+              />
+            ))}
+          </div>
+        )}
       </Contain>
     </Section>
   );
