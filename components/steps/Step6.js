@@ -5,6 +5,7 @@ import Text from "../text";
 export default function Step6({ content }) {
   const { watch, setValue } = useFormContext();
   const inputRef = useRef(null);
+  const cameraRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const photos = watch("photos") || [];
 
@@ -71,13 +72,21 @@ export default function Step6({ content }) {
               </p>
             </div>
           </div>
-
           <input
             ref={inputRef}
             type="file"
             accept="image/*"
             multiple
             className="steps__upload-input"
+            onChange={(e) => addFiles(e.target.files)}
+          />
+          {/* Camera input (NEW) */}
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: "none" }}
             onChange={(e) => addFiles(e.target.files)}
           />
           <div className="steps__btn-wrap">
@@ -100,6 +109,7 @@ export default function Step6({ content }) {
             <button
               type="button"
               className="steps__btn-continue steps__btn-continue-2 steps__upload-btn"
+              onClick={() => cameraRef.current?.click()}
             >
               Take Photo
             </button>
