@@ -234,7 +234,7 @@ function VideoModal({ onClose, videoUrl }) {
   return (
     <div className="steps__modal-overlay" onClick={onClose}>
       <div
-        className="steps__modal steps__modal--wide"
+        className="steps__modal steps__modal--wide !p-[0]"
         onClick={(e) => e.stopPropagation()}
       >
         <button

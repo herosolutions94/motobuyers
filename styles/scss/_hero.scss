@@ -210,3 +210,10 @@
     }
   }
 }
+
+.video__wrapper {
+  video {
+    object-fit: cover;
+    object-position: center;
+  }
+}
