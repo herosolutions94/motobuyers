@@ -120,7 +120,7 @@ export default function Step6({ content }) {
           <span>Up to 30 photos</span>
           <span>Uploads saved with your draft automatically.</span>
         </div>
-
+ 
         {photos.length > 0 && (
           <div className="steps__upload-thumbs">
             {photos.map((p) => (
