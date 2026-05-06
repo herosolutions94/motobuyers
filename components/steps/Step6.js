@@ -105,7 +105,7 @@ export default function Step6({ content }) {
               onClick={() => inputRef.current?.click()}
             >
               Choose photos
-            </button>
+            </button> 
             <button
               type="button"
               className="steps__btn-continue steps__btn-continue-2 steps__upload-btn"
