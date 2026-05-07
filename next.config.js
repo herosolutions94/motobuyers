@@ -3,7 +3,13 @@ const webpack = require("webpack");
 
 const nextConfig = {
   images: {
-    domains: ['localhost', 'localhost:8080', '127.0.0.1','motobuyers.herosolutions.com.pk'],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "motobuyers.herosolutions.com.pk",
+        pathname: "/**",
+      },
+    ],
   },
   reactStrictMode: false,
   // 👇 ESM fix (important for html-react-parser v5)
