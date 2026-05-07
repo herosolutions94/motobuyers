@@ -388,18 +388,29 @@
 ═══════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   #hero {
+    padding-top: 4rem;
+    .hero__bg {
+      height: auto;
+    }
     .hero__inner {
       gap: 2rem;
       padding: 0;
     }
     .hero__content {
+      margin-bottom: 3rem;
       .hero__title {
-        font-size: 5rem;
+        font-size: 3.6rem;
+      }
+      .hero__subtitle {
+        display: none;
       }
     }
     .hero__play {
       width: 9.6rem;
       height: 9.6rem;
+    }
+    .hero__left {
+      display: none;
     }
     .hero__play-inner {
       width: 8rem;
