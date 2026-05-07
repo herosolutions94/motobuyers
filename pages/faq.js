@@ -29,8 +29,6 @@ export const getServerSideProps = async (context) => {
 export default function FAQsPage({ result }) {
   let { meta_desc, page_title, content, site_settings, faq_categories } =
     result;
-  console.log("faq_categories", faq_categories);
-
   const FAQ_GROUPS =
     faq_categories?.map((category) => {
       return {
