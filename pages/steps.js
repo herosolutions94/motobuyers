@@ -233,9 +233,22 @@ export default function StepsPage({ result }) {
       if (tab === "vin") return await trigger("vin");
       const yr = vals.year;
       if (yr === "before-2003" || (yr && parseInt(yr, 10) < 2003)) return false;
-      const fields = ["year", "make", "model"];
-      if (vals.make === "other") fields.push("customMake");
-      return await trigger(fields);
+
+      // Trigger RHF-registered fields (year, make, model all have required rules)
+      const rhfValid = await trigger(["year", "make", "model"]);
+
+      // customMake has no required rule in register() to avoid firing on mount,
+      // so we validate it manually here instead.
+      if (vals.make === "other" && !vals.customMake?.trim()) {
+        methods.setError("customMake", {
+          type: "manual",
+          message: "Please enter the make",
+        });
+        return false;
+      }
+      methods.clearErrors("customMake");
+
+      return rhfValid;
     },
     "vehicle-details": () => trigger(["mileage", "zip", "ridden", "email"]),
     "cosmetic-rating": () => trigger("cosmetic"),
@@ -337,7 +350,7 @@ export default function StepsPage({ result }) {
     setSubmitError("");
     try {
       const { appraisalId } = await submitAppraisal(data);
-      console.log("=== MotoBuyers Submission saved ===", appraisalId, data);
+      // console.log(" MotoBuyers Submission saved", appraisalId, data);
       setCurrentIndex(sequence.length - 1);
     } catch (err) {
       setSubmitError(err.message || "Something went wrong. Please try again.");

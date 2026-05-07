@@ -22,17 +22,32 @@
       margin-bottom: 8px;
       font-weight: 600;
       color: var(--color-gray-text);
+      @media (max-width: 768px) {
+        flex-flow: wrap;
+      }
       .left {
         text-align: left;
         text-transform: uppercase;
+        @media (max-width: 768px) {
+          flex: auto;
+        }
       }
       .center {
         flex: 1;
         padding: 0 20px;
         text-align: center;
+        @media (max-width: 768px) {
+          order: 2;
+          flex: none;
+          width: 100%;
+          padding-top: 0.5rem;
+        }
       }
       .right {
         text-align: right;
+        @media (max-width: 768px) {
+          flex: auto;
+        }
       }
     }
 

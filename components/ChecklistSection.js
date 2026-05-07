@@ -7,7 +7,6 @@ import { cmsFileUrl } from "@/helpers/helpers";
 import Text from "@/components/text";
 
 export default function ChecklistSection({ content, appointment_tips }) {
-  console.log("appointment_tips", appointment_tips);
 
   return (
     <Section id="checklist">
