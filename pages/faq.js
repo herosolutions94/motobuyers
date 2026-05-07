@@ -25,7 +25,7 @@ export const getServerSideProps = async (context) => {
 
   return { props: { result } };
 };
-
+ 
 export default function FAQsPage({ result }) {
   let { meta_desc, page_title, content, site_settings, faq_categories } =
     result;
