@@ -591,8 +591,20 @@ export default function Step1({ content }) {
                     </label>
                     <input
                       {...register("customMake", {
-                        required: "Please enter the make",
-                        shouldUnregister: true,   // ← clears error when field unmounts
+                        // NOTE: do NOT use shouldUnregister:true here.
+                        // That option wipes the stored value from the RHF store
+                        // whenever this input unmounts (e.g. user navigates to
+                        // Step 2 and back), causing both data-loss on return
+                        // and a null custom_make in Supabase on submit.
+                        //
+                        // Validation is intentionally omitted from register()
+                        // because RHF would fire it the instant the field mounts,
+                        // showing "Please enter the make" before the user has
+                        // typed anything. The required check is enforced instead
+                        // in steps.js › STEP_FIELDS["bike-id"] which calls
+                        // trigger(["customMake"]) only when the user presses
+                        // "Get my Offer", and in isStepValid which gates the
+                        // Continue button.
                       })}
                       type="text"
                       className={`steps__input${errors.customMake ? " steps__input--error" : ""}`}
