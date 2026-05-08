@@ -41,9 +41,13 @@
 .nav__link {
   font-size: var(--fs-17);
   font-weight: var(--fw-400);
-  color: #000;
+  color: var(--color-black);
   line-height: 2.6rem;
   white-space: nowrap;
+  transition: all 0.2s;
+  &:hover {
+    color: var(--color-red);
+  }
 }
 
 .nav__more {

@@ -35,14 +35,16 @@
     }
   }
   .footer__link {
-    display: block;
+    display: inline-block;
     font-size: var(--fs-16);
     font-weight: var(--fw-400);
     color: var(--color-white);
     line-height: 1;
     cursor: pointer;
+    transition: all 0.2s;
     &:hover {
-      text-decoration: underline;
+      color: var(--color-red);
+      // text-decoration: underline;
     }
     &_wrap {
       margin-bottom: 2rem;
