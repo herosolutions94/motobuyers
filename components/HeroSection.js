@@ -498,300 +498,302 @@ export default function HeroSection({ content }) {
               </div> */}
             </div>
 
-            <div
-              className="hero__form-card"
-              role="form"
-              aria-label="Get your motorcycle offer"
-            >
+            <div className="hero__right">
               <div
-                id="steps__page"
-                style={{
-                  minHeight: "unset",
-                  background: "none",
-                  paddingBottom: 0,
-                }}
+                className="hero__form-card"
+                role="form"
+                aria-label="Get your motorcycle offer"
               >
-                {/* Tabs */}
-                <div className="steps__tabs">
-                  <button
-                    className={`steps__tab${activeTab === "vin" ? " steps__tab--active" : ""}`}
-                    type="button"
-                    onClick={() => {
-                      setActiveTab("vin");
-                      setFormError("");
-                    }}
-                  >
-                    VIN
-                  </button>
-                  <button
-                    className={`steps__tab${activeTab === "make" ? " steps__tab--active" : ""}`}
-                    type="button"
-                    onClick={() => {
-                      setActiveTab("make");
-                      setFormError("");
-                    }}
-                  >
-                    Year and Make
-                  </button>
-                </div>
+                <div
+                  id="steps__page"
+                  style={{
+                    minHeight: "unset",
+                    background: "none",
+                    paddingBottom: 0,
+                  }}
+                >
+                  {/* Tabs */}
+                  <div className="steps__tabs">
+                    <button
+                      className={`steps__tab${activeTab === "vin" ? " steps__tab--active" : ""}`}
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("vin");
+                        setFormError("");
+                      }}
+                    >
+                      VIN
+                    </button>
+                    <button
+                      className={`steps__tab${activeTab === "make" ? " steps__tab--active" : ""}`}
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("make");
+                        setFormError("");
+                      }}
+                    >
+                      Year and Make
+                    </button>
+                  </div>
 
-                {/* ── VIN Tab ── */}
-                {activeTab === "vin" && (
-                  <div className="steps__tab-content">
-                    <label className="steps__field-label !mb-[0]">
-                      Enter your VIN
-                    </label>
-                    <div className="steps__input-icon-wrap">
-                      <input
-                        type="text"
-                        className={`steps__input${vinValid && vinDecodeSuccess ? " steps__input--valid" : ""}${vinDecodeError ? " steps__input--error" : ""}`}
-                        placeholder="17 character VIN"
-                        value={vinValue}
-                        maxLength={17}
-                        onChange={(e) => {
-                          const v = e.target.value.toUpperCase();
-                          setVinValue(v);
-                          setVinDecodeError("");
-                          setVinDecodeSuccess(false);
-                          setFormError("");
-                          lastDecodedVin.current = "";
-                        }}
-                      />
-                      {vinValid && vinDecoding && (
-                        <span className="steps__input-valid-icon">
-                          <svg
-                            className="steps__vin-spinner"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            width="20"
-                            height="20"
-                          >
-                            <circle
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="#d1d5db"
-                              strokeWidth="2.5"
-                            />
-                            <path
-                              d="M12 2a10 10 0 0 1 10 10"
-                              stroke="var(--color-red, #dc2626)"
-                              strokeWidth="2.5"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </span>
+                  {/* ── VIN Tab ── */}
+                  {activeTab === "vin" && (
+                    <div className="steps__tab-content">
+                      <label className="steps__field-label !mb-[0]">
+                        Enter your VIN
+                      </label>
+                      <div className="steps__input-icon-wrap">
+                        <input
+                          type="text"
+                          className={`steps__input${vinValid && vinDecodeSuccess ? " steps__input--valid" : ""}${vinDecodeError ? " steps__input--error" : ""}`}
+                          placeholder="17 character VIN"
+                          value={vinValue}
+                          maxLength={17}
+                          onChange={(e) => {
+                            const v = e.target.value.toUpperCase();
+                            setVinValue(v);
+                            setVinDecodeError("");
+                            setVinDecodeSuccess(false);
+                            setFormError("");
+                            lastDecodedVin.current = "";
+                          }}
+                        />
+                        {vinValid && vinDecoding && (
+                          <span className="steps__input-valid-icon">
+                            <svg
+                              className="steps__vin-spinner"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              width="20"
+                              height="20"
+                            >
+                              <circle
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="#d1d5db"
+                                strokeWidth="2.5"
+                              />
+                              <path
+                                d="M12 2a10 10 0 0 1 10 10"
+                                stroke="var(--color-red, #dc2626)"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </span>
+                        )}
+                        {vinValid && !vinDecoding && vinDecodeSuccess && (
+                          <span className="steps__input-valid-icon">
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              width="20"
+                              height="20"
+                            >
+                              <circle cx="12" cy="12" r="10" fill="#22c55e" />
+                              <polyline
+                                points="7,12 10.5,15.5 17,9"
+                                stroke="#fff"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+
+                      {vinDecodeError && (
+                        <p
+                          className="steps__field-error"
+                          style={{ marginTop: "0.4rem" }}
+                        >
+                          {vinDecodeError}
+                        </p>
                       )}
-                      {vinValid && !vinDecoding && vinDecodeSuccess && (
-                        <span className="steps__input-valid-icon">
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            width="20"
-                            height="20"
+
+                      <button
+                        type="button"
+                        className="steps__vin-link"
+                        onClick={() => setShowVinHelp(true)}
+                      >
+                        {content?.tab1_popup_label}
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          width="16"
+                          height="16"
+                          aria-hidden="true"
+                        >
+                          <circle
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          />
+                          <line
+                            x1="12"
+                            y1="8"
+                            x2="12"
+                            y2="12"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <circle cx="12" cy="16" r="1" fill="currentColor" />
+                        </svg>
+                      </button>
+
+                      {vinDecodeSuccess && (
+                        <>
+                          <label
+                            className="steps__field-label !mb-[0]"
+                            style={{ marginTop: "1rem" }}
                           >
-                            <circle cx="12" cy="12" r="10" fill="#22c55e" />
-                            <polyline
-                              points="7,12 10.5,15.5 17,9"
-                              stroke="#fff"
-                              strokeWidth="2.2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
+                            Vehicle identified
+                          </label>
+                          <input
+                            type="text"
+                            className="steps__input steps__input--readonly"
+                            value={vinDecoded.vehicleIdentified}
+                            readOnly
+                          />
+                          <label
+                            className="steps__field-label !-mb-[10px]"
+                            style={{ marginTop: "1.2rem" }}
+                          >
+                            Model
+                          </label>
+                          <p className="steps__field-hint !mb-[0]">
+                            Pre-filled from VIN — update if needed
+                          </p>
+                          <input
+                            type="text"
+                            className="steps__input"
+                            value={vinDecoded.vinModel}
+                            onChange={(e) =>
+                              setVinDecoded((prev) => ({
+                                ...prev,
+                                vinModel: e.target.value,
+                              }))
+                            }
+                            placeholder="Enter model"
+                          />
+                        </>
                       )}
                     </div>
+                  )}
 
-                    {vinDecodeError && (
-                      <p
-                        className="steps__field-error"
-                        style={{ marginTop: "0.4rem" }}
-                      >
-                        {vinDecodeError}
-                      </p>
-                    )}
+                  {/* ── Year & Make Tab ── */}
+                  {activeTab === "make" && (
+                    <div className="steps__tab-content">
+                      <label className="steps__field-label !mb-[0]">Year</label>
+                      <CustomSelect
+                        value={year}
+                        onChange={(v) => {
+                          setYear(v);
+                          setErrors((prev) => ({ ...prev, year: "" }));
+                        }}
+                        options={YEAR_OPTIONS}
+                        placeholder="Choose year"
+                      />
+                      {errors.year && (
+                        <p className="steps__field-error">{errors.year}</p>
+                      )}
+                      {isUnsupportedYear && <UnsupportedYearBanner />}
 
-                    <button
-                      type="button"
-                      className="steps__vin-link"
-                      onClick={() => setShowVinHelp(true)}
-                    >
-                      {content?.tab1_popup_label}
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        width="16"
-                        height="16"
-                        aria-hidden="true"
-                      >
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        />
-                        <line
-                          x1="12"
-                          y1="8"
-                          x2="12"
-                          y2="12"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        <circle cx="12" cy="16" r="1" fill="currentColor" />
-                      </svg>
-                    </button>
+                      {!isUnsupportedYear && (
+                        <>
+                          <label
+                            className="steps__field-label !mb-[0]"
+                            style={{ marginTop: "1.2rem" }}
+                          >
+                            Make
+                          </label>
+                          <CustomSelect
+                            value={make}
+                            onChange={(v) => {
+                              setMake(v);
+                              setErrors((prev) => ({ ...prev, make: "" }));
+                            }}
+                            options={MAKE_OPTIONS}
+                            placeholder="Choose make"
+                          />
+                          {errors.make && (
+                            <p className="steps__field-error">{errors.make}</p>
+                          )}
+                          {/* Enter Make — shown when Other is selected */}
+                          {make === "other" && (
+                            <>
+                              <label
+                                className="steps__field-label !mb-[0]"
+                                style={{ marginTop: "1rem" }}
+                              >
+                                Enter Make
+                              </label>
+                              <input
+                                type="text"
+                                className="steps__input"
+                                placeholder="e.g. Aprilia, MV Agusta, Benelli…"
+                                value={customMake}
+                                autoFocus
+                                onChange={(e) => {
+                                  setCustomMake(e.target.value);
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    customMake: "",
+                                  }));
+                                }}
+                              />
 
-                    {vinDecodeSuccess && (
-                      <>
-                        <label
-                          className="steps__field-label !mb-[0]"
-                          style={{ marginTop: "1rem" }}
-                        >
-                          Vehicle identified
-                        </label>
-                        <input
-                          type="text"
-                          className="steps__input steps__input--readonly"
-                          value={vinDecoded.vehicleIdentified}
-                          readOnly
-                        />
-                        <label
-                          className="steps__field-label !-mb-[10px]"
-                          style={{ marginTop: "1.2rem" }}
-                        >
-                          Model
-                        </label>
-                        <p className="steps__field-hint !mb-[0]">
-                          Pre-filled from VIN — update if needed
-                        </p>
-                        <input
-                          type="text"
-                          className="steps__input"
-                          value={vinDecoded.vinModel}
-                          onChange={(e) =>
-                            setVinDecoded((prev) => ({
-                              ...prev,
-                              vinModel: e.target.value,
-                            }))
-                          }
-                          placeholder="Enter model"
-                        />
-                      </>
-                    )}
-                  </div>
-                )}
+                              {make === "other" && errors.customMake && (
+                                <p className="steps__field-error">
+                                  {errors.customMake}
+                                </p>
+                              )}
+                            </>
+                          )}
 
-                {/* ── Year & Make Tab ── */}
-                {activeTab === "make" && (
-                  <div className="steps__tab-content">
-                    <label className="steps__field-label !mb-[0]">Year</label>
-                    <CustomSelect
-                      value={year}
-                      onChange={(v) => {
-                        setYear(v);
-                        setErrors((prev) => ({ ...prev, year: "" }));
-                      }}
-                      options={YEAR_OPTIONS}
-                      placeholder="Choose year"
-                    />
-                    {errors.year && (
-                      <p className="steps__field-error">{errors.year}</p>
-                    )}
-                    {isUnsupportedYear && <UnsupportedYearBanner />}
+                          <label
+                            className="steps__field-label !mb-[0]"
+                            style={{ marginTop: "1.2rem" }}
+                          >
+                            Model
+                          </label>
+                          <input
+                            type="text"
+                            className="steps__input"
+                            placeholder="e.g. CBR600RR, Ninja 650, MT-07…"
+                            value={model}
+                            onChange={(e) => {
+                              setModel(e.target.value);
+                              setErrors((prev) => ({ ...prev, model: "" }));
+                            }}
+                          />
 
-                    {!isUnsupportedYear && (
-                      <>
-                        <label
-                          className="steps__field-label !mb-[0]"
-                          style={{ marginTop: "1.2rem" }}
-                        >
-                          Make
-                        </label>
-                        <CustomSelect
-                          value={make}
-                          onChange={(v) => {
-                            setMake(v);
-                            setErrors((prev) => ({ ...prev, make: "" }));
-                          }}
-                          options={MAKE_OPTIONS}
-                          placeholder="Choose make"
-                        />
-                        {errors.make && (
-                          <p className="steps__field-error">{errors.make}</p>
-                        )}
-                        {/* Enter Make — shown when Other is selected */}
-                        {make === "other" && (
-                          <>
-                            <label
-                              className="steps__field-label !mb-[0]"
-                              style={{ marginTop: "1rem" }}
-                            >
-                              Enter Make
-                            </label>
-                            <input
-                              type="text"
-                              className="steps__input"
-                              placeholder="e.g. Aprilia, MV Agusta, Benelli…"
-                              value={customMake}
-                              autoFocus
-                              onChange={(e) => {
-                                setCustomMake(e.target.value);
-                                setErrors((prev) => ({
-                                  ...prev,
-                                  customMake: "",
-                                }));
-                              }}
-                            />
+                          {errors.model && (
+                            <p className="steps__field-error">{errors.model}</p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
 
-                            {make === "other" && errors.customMake && (
-                              <p className="steps__field-error">
-                                {errors.customMake}
-                              </p>
-                            )}
-                          </>
-                        )}
+                  {/* {formError && (
+                    <p className="steps__field-error" style={{ marginTop: "0.6rem" }}>{formError}</p>
+                  )} */}
 
-                        <label
-                          className="steps__field-label !mb-[0]"
-                          style={{ marginTop: "1.2rem" }}
-                        >
-                          Model
-                        </label>
-                        <input
-                          type="text"
-                          className="steps__input"
-                          placeholder="e.g. CBR600RR, Ninja 650, MT-07…"
-                          value={model}
-                          onChange={(e) => {
-                            setModel(e.target.value);
-                            setErrors((prev) => ({ ...prev, model: "" }));
-                          }}
-                        />
-
-                        {errors.model && (
-                          <p className="steps__field-error">{errors.model}</p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* {formError && (
-                  <p className="steps__field-error" style={{ marginTop: "0.6rem" }}>{formError}</p>
-                )} */}
-
-                <button
-                  className="form__submit-btn"
-                  type="button"
-                  style={{ marginTop: "20px" }}
-                  onClick={handleSubmit}
-                >
-                  {content?.form_btn_heading}
-                </button>
+                  <button
+                    className="form__submit-btn"
+                    type="button"
+                    style={{ marginTop: "20px" }}
+                    onClick={handleSubmit}
+                  >
+                    {content?.form_btn_heading}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -808,6 +810,5 @@ export default function HeroSection({ content }) {
         />
       )}
     </>
-    
   );
 }
