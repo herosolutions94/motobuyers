@@ -361,7 +361,7 @@ export default function Step1({ content }) {
   }, [vinValid, vinValue, setValue]);
 
   const isUnsupportedYear =
-    activeTab === "make" &&
+    activeTab === "manual" &&
     yearValue &&
     (yearValue === "before-2003" || parseInt(yearValue, 10) < 2003);
 
@@ -383,9 +383,9 @@ export default function Step1({ content }) {
             VIN
           </button>
           <button
-            className={`steps__tab ${activeTab === "make" ? "steps__tab--active" : ""}`}
+            className={`steps__tab ${activeTab === "manual" ? "steps__tab--active" : ""}`}
             type="button"
-            onClick={() => handleTab("make")}
+            onClick={() => handleTab("manual")}
           >
             Year and Make
           </button>
@@ -519,7 +519,7 @@ export default function Step1({ content }) {
         )}
 
         {/* ── Year & Make Tab ── */}
-        {activeTab === "make" && (
+        {activeTab === "manual" && (
           <div className="steps__tab-content">
             <label className="steps__field-label !mb-[0]">Year</label>
             <Controller

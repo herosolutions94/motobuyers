@@ -375,7 +375,7 @@ export default function StepsPage({ result }) {
       const m = allValues.vinModel || "";
       return [allValues.year, allValues.make, m].filter(Boolean).join(" • ");
     }
-    if (tab === "make" && allValues.year && allValues.make && allValues.model) {
+    if (tab === "manual" && allValues.year && allValues.make && allValues.model) {
       return `${allValues.year} • ${allValues.make} • ${allValues.model}`;
     }
     if (allValues.vin) return `VIN: ${allValues.vin}`;
