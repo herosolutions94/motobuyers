@@ -525,7 +525,7 @@ export default function HeroSection({ content }) {
                       VIN
                     </button>
                     <button
-                      className={`steps__tab${activeTab === "make" ? " steps__tab--active" : ""}`}
+                      className={`steps__tab${activeTab === "manual" ? " steps__tab--active" : ""}`}
                       type="button"
                       onClick={() => {
                         setActiveTab("make");
@@ -687,7 +687,7 @@ export default function HeroSection({ content }) {
                   )}
 
                   {/* ── Year & Make Tab ── */}
-                  {activeTab === "make" && (
+                  {activeTab === "manual" && (
                     <div className="steps__tab-content">
                       <label className="steps__field-label !mb-[0]">Year</label>
                       <CustomSelect
