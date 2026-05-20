@@ -16,6 +16,8 @@ import Step7 from "../components/steps/Step7";
 import Step8 from "../components/steps/Step8";
 
 import { submitAppraisal } from "../lib/submitAppraisal";
+import { saveDraft, savePhotos } from "../lib/saveDraft";
+import { clearDraftSession } from "../lib/draftSession";
 import { HERO_PREFILL_KEY } from "../components/HeroSection";
 
 import http from "@/helpers/http";
@@ -234,11 +236,8 @@ export default function StepsPage({ result }) {
       const yr = vals.year;
       if (yr === "before-2003" || (yr && parseInt(yr, 10) < 2003)) return false;
 
-      // Trigger RHF-registered fields (year, make, model all have required rules)
       const rhfValid = await trigger(["year", "make", "model"]);
 
-      // customMake has no required rule in register() to avoid firing on mount,
-      // so we validate it manually here instead.
       if (vals.make === "other" && !vals.customMake?.trim()) {
         methods.setError("customMake", {
           type: "manual",
@@ -303,7 +302,6 @@ export default function StepsPage({ result }) {
       methods.clearErrors("serviceItems");
       return true;
     },
-    // ── Step 4D: both tires must have a mileage value OR be toggled unknown ──
     "tire-mileage": () => {
       const vals = methods.getValues();
       const frontDone = vals.frontTireNotSure || vals.frontTireMiles > 0;
@@ -325,20 +323,50 @@ export default function StepsPage({ result }) {
     "thank-you": () => true,
   };
 
+  // ─── goNext: validate → save draft → advance ──────────────────────────────
   const goNext = useCallback(async () => {
     const validate = STEP_FIELDS[currentStepId];
     const valid = validate ? await validate(methods.getValues()) : true;
     if (!valid) return;
+
+    const formData = methods.getValues();
+
+    // ── Save draft for current step ──────────────────────────────────────────
+    try {
+      // Photos step: upload files to Supabase Storage + appraisal_photos table
+      if (currentStepId === "photos") {
+        await savePhotos(formData.photos ?? []);
+      }
+      // All steps (including photos for current_page update): save partial row
+      await saveDraft(currentStepId, formData);
+    } catch (err) {
+      // Non-fatal: log but don't block the user from continuing
+      console.error("[goNext] saveDraft error:", err);
+    }
+
     setCurrentIndex((i) => Math.min(i + 1, sequence.length - 1));
-  }, [currentStepId, sequence.length]);
+  }, [currentStepId, sequence.length, methods]);
 
-  const goBack = useCallback(() => {
+  // ─── goBack: save draft for current step (data may have changed) then go back
+  const goBack = useCallback(async () => {
+    const formData = methods.getValues();
+
+    // Only PATCH steps (not bike-id, which is the create step)
+    if (currentStepId !== "bike-id") {
+      try {
+        await saveDraft(currentStepId, formData);
+      } catch (err) {
+        console.error("[goBack] saveDraft error:", err);
+      }
+    }
+
     setCurrentIndex((i) => Math.max(i - 1, 0));
-  }, []);
+  }, [currentStepId, methods]);
 
-  // ─── Start Over: reset form and jump back to Step 1 ─────────────────────
+  // ─── Start Over: reset form, clear draft session, jump back to Step 1 ─────
   const handleStartOver = useCallback(() => {
     methods.reset();
+    clearDraftSession();
     setCurrentIndex(0);
   }, [methods]);
 
@@ -350,7 +378,6 @@ export default function StepsPage({ result }) {
     setSubmitError("");
     try {
       const { appraisalId } = await submitAppraisal(data);
-      // console.log(" MotoBuyers Submission saved", appraisalId, data);
       setCurrentIndex(sequence.length - 1);
     } catch (err) {
       setSubmitError(err.message || "Something went wrong. Please try again.");
@@ -428,7 +455,6 @@ export default function StepsPage({ result }) {
         v.serviceOtherChecked ||
         v.serviceCircleOption
       );
-    // ── Step 4D: both tires must be set or toggled unknown ──
     if (currentStepId === "tire-mileage") {
       return (
         (v.frontTireNotSure || v.frontTireMiles > 0) &&
@@ -520,7 +546,7 @@ export default function StepsPage({ result }) {
               content={content}
               thank_steps={thank_steps}
               firstName={allValues.firstName}
-              onStartOver={handleStartOver}     // ← wired up
+              onStartOver={handleStartOver}
             />
           )}
         </Contain>
