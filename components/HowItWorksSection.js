@@ -28,6 +28,9 @@ export default function HowItWorksSection({ content }) {
     desc: content?.[`sec1_card_text${i}`],
     icon: content?.[`image${i}`],
   }));
+  const hiwData2 = [17, 18, 19].map((i) => ({
+    icon: content?.[`image${i}`],
+  }));
 
   return (
     <>
@@ -101,10 +104,16 @@ export default function HowItWorksSection({ content }) {
               role="tabpanel"
               aria-labelledby={`hiw-tab-${activeTab}`}
             >
-              <img
+              {/* <img
                 className="hiw__panel-img"
                 src={cmsFileUrl(content?.image5)}
                 alt="How it works illustration"
+              /> */}
+              
+              <img
+                className="hiw__panel-img"
+                src={cmsFileUrl(hiwData2[activeTab]?.icon)}
+                alt={hiwData[activeTab]?.title}
               />
               <div className="hiw__panel-body">
                 <Heading as="h3" className="hiw__panel-title">

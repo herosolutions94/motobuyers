@@ -434,7 +434,7 @@ export default function HeroSection({ content }) {
       sessionStorage.setItem(
         HERO_PREFILL_KEY,
         JSON.stringify({
-          tab: "make",
+          tab: "manual",
           year,
           make,
           customMake: make === "other" ? customMake.trim() : "",
@@ -528,7 +528,7 @@ export default function HeroSection({ content }) {
                       className={`steps__tab${activeTab === "manual" ? " steps__tab--active" : ""}`}
                       type="button"
                       onClick={() => {
-                        setActiveTab("make");
+                        setActiveTab("manual");
                         setFormError("");
                       }}
                     >
