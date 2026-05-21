@@ -11,13 +11,14 @@ export default function Step7({ content }) {
     formState: { errors },
   } = useFormContext();
   const step1Email = watch("email");
-  const contactEmail = watch("contactEmail");
-
   useEffect(() => {
-    if (step1Email && !contactEmail) {
-      setValue("contactEmail", step1Email);
+    if (step1Email) {
+      setValue("contactEmail", step1Email, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
     }
-  }, [step1Email, contactEmail, setValue]);
+  }, [step1Email, setValue]);
 
   return (
     <div className="steps__section">
