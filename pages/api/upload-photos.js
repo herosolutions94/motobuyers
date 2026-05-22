@@ -10,7 +10,7 @@ export const config = {
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 const BUCKET = "intake-photos";
@@ -43,6 +43,8 @@ export default async function handler(req, res) {
 
     let uploadedCount = 0;
 
+    const uploadedItems = [];
+
     for (const file of uploadedFiles) {
       if (!file) continue;
 
@@ -56,11 +58,12 @@ export default async function handler(req, res) {
 
       const storagePath = `drafts/${submissionId}/${fileName}`;
 
-      // upload to storage
+      // upload
       const { error: uploadErr } = await supabase.storage
         .from(BUCKET)
         .upload(storagePath, fileBuffer, {
           contentType: file.mimetype,
+          upsert: false,
         });
 
       if (uploadErr) {
@@ -68,8 +71,18 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // insert db row
-      const { error: insertErr } = await supabase
+      // public preview
+      // const {
+      //   data: { publicUrl },
+      // } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+      const { data: signedData } = await supabase.storage
+        .from(BUCKET)
+        .createSignedUrl(storagePath, 60 * 60);
+
+      const publicUrl = signedData?.signedUrl || null;
+
+      // insert row
+      const { data: row, error: insertErr } = await supabase
         .from("intake_photos")
         .insert({
           submission_id: submissionId,
@@ -78,27 +91,31 @@ export default async function handler(req, res) {
           original_filename: file.originalFilename,
           mime_type: file.mimetype,
           size_bytes: file.size,
+          preview_url: publicUrl,
           status: "uploaded",
-        });
+        })
+        .select("*")
+        .single();
 
       if (insertErr) {
         console.error(insertErr);
         continue;
       }
 
-      uploadedCount++;
+      uploadedItems.push(row);
     }
 
     // update counts
     await supabase
       .from("intake_submissions")
       .update({
-        uploaded_photo_count: uploadedCount,
+        uploaded_photo_count: uploadedItems.length,
       })
       .eq("id", submissionId);
 
     return res.status(200).json({
       success: true,
+      photos: uploadedItems,
     });
   } catch (err) {
     console.error(err);
