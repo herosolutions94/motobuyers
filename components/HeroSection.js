@@ -6,6 +6,13 @@ import Heading from "./heading";
 import Paragraph from "./paragraph";
 import { cmsFileUrl } from "@/helpers/helpers";
 import Text from "./text";
+import {
+  getOrCreateSessionId,
+  setSubmissionId,
+  getSubmissionId,
+  saveFormState,
+  saveStepIndex,
+} from "@/lib/draftSession";
 
 // ─── Custom Select ────────────────────────────────────────────────────────────
 function CustomSelect({ value, onChange, options, placeholder }) {
@@ -60,17 +67,15 @@ function CustomSelect({ value, onChange, options, placeholder }) {
                 />
               );
             }
-            const v = String(opt?.value ?? opt);
-            const l = opt?.label ?? opt;
+            const v       = String(opt?.value ?? opt);
+            const l       = opt?.label ?? opt;
             const isItalic = opt?.italic;
             return (
               <div
                 key={v}
                 className={[
                   "steps__custom-select__option",
-                  v === String(value)
-                    ? "steps__custom-select__option--selected"
-                    : "",
+                  v === String(value) ? "steps__custom-select__option--selected" : "",
                   isItalic ? "steps__custom-select__option--italic" : "",
                 ]
                   .join(" ")
@@ -92,7 +97,7 @@ function CustomSelect({ value, onChange, options, placeholder }) {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const CURRENT_YEAR = new Date().getFullYear();
-const MIN_YEAR = 2003;
+const MIN_YEAR     = 2003;
 
 const YEAR_OPTIONS = [
   ...Array.from(
@@ -134,17 +139,14 @@ async function decodeVin(vin) {
   );
   if (!res.ok) throw new Error("Network error");
   const data = await res.json();
-  const r = data.Results?.[0] ?? {};
+  const r    = data.Results?.[0] ?? {};
   return {
-    year: r.ModelYear || "",
-    make: r.Make || "", // return raw — matchMakeToOption handles casing
-    model: r.Model || "",
+    year:  r.ModelYear || "",
+    make:  r.Make      || "",
+    model: r.Model     || "",
   };
 }
 
-// Match raw API make string (e.g. "HARLEY-DAVIDSON") to the exact
-// option value in MAKE_OPTIONS using a case-insensitive comparison.
-// Returns the matched option string, or "other" if no match found.
 function matchMakeToOption(rawMake) {
   if (!rawMake) return "";
   const normalized = rawMake.trim().toLowerCase();
@@ -154,12 +156,18 @@ function matchMakeToOption(rawMake) {
     return v.toLowerCase() === normalized;
   });
   if (match) return String(match?.value ?? match);
-  return "other"; // unrecognized make → show "Enter Make" text input
+  return "other";
 }
 
 function isValidVin(vin) {
   return /^[A-HJ-NPR-Z0-9]{17}$/i.test(vin);
 }
+
+// ─── PAGE_MAP (mirrors saveDraft) ─────────────────────────────────────────────
+const PAGE_MAP = {
+  "bike-id":         "entry",
+  "vehicle-details": "details",
+};
 
 // ─── VinHelpModal ─────────────────────────────────────────────────────────────
 function VinHelpModal({ onClose, content }) {
@@ -175,24 +183,8 @@ function VinHelpModal({ onClose, content }) {
           aria-label="Close"
         >
           <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <line
-              x1="18"
-              y1="6"
-              x2="6"
-              y2="18"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-            <line
-              x1="6"
-              y1="6"
-              x2="18"
-              y2="18"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
+            <line x1="18" y1="6" x2="6"  y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="6"  y1="6" x2="18" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
           </svg>
         </button>
         <h2 className="steps__modal-title steps__modal-title--left">
@@ -203,26 +195,14 @@ function VinHelpModal({ onClose, content }) {
         </p>
         <div className="steps__vin-cards">
           <div className="steps__vin-card">
-            <p className="steps__vin-card-title">
-              {content?.popup_card_heading3}
-            </p>
+            <p className="steps__vin-card-title">{content?.popup_card_heading3}</p>
             <p className="steps__vin-card-desc">{content?.popup_card_text3}</p>
-            <img
-              src={cmsFileUrl(content?.image3)}
-              alt="Steering neck location"
-              className="steps__vin-card-img"
-            />
+            <img src={cmsFileUrl(content?.image3)} alt="Steering neck location" className="steps__vin-card-img" />
           </div>
           <div className="steps__vin-card">
-            <p className="steps__vin-card-title">
-              {content?.popup_card_heading4}
-            </p>
+            <p className="steps__vin-card-title">{content?.popup_card_heading4}</p>
             <p className="steps__vin-card-desc">{content?.popup_card_text4}</p>
-            <img
-              src={cmsFileUrl(content?.image4)}
-              alt="Engine casing location"
-              className="steps__vin-card-img"
-            />
+            <img src={cmsFileUrl(content?.image4)} alt="Engine casing location" className="steps__vin-card-img" />
           </div>
         </div>
       </div>
@@ -237,14 +217,9 @@ function VideoModal({ onClose, videoUrl }) {
         className="steps__modal steps__modal--wide !p-[0]"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          className="steps__modal-close"
-          onClick={onClose}
-          aria-label="Close"
-        >
+        <button className="steps__modal-close" onClick={onClose} aria-label="Close">
           ✕
         </button>
-
         <div className="video__wrapper">
           <video
             src={videoUrl}
@@ -274,44 +249,98 @@ function UnsupportedYearBanner() {
   );
 }
 
-// ─── SESSION STORAGE KEY ──────────────────────────────────────────────────────
+// ─── SESSION STORAGE KEY (kept for backwards compatibility) ───────────────────
 export const HERO_PREFILL_KEY = "motobuyers_step1_prefill";
+
+// ─── Build the Supabase row for bike-id (mirrors saveDraft logic) ─────────────
+function buildBikeIdRow(formState, sessionId, nextPageId) {
+  const isVin    = formState.tab === "vin";
+  const isManual = formState.tab === "manual";
+
+  const activeYear  = isVin ? formState.year     || null : formState.manualYear || null;
+  const activeMake  = isVin ? formState.make      || null : formState.manualMake || null;
+  const activeModel = isVin ? formState.vinModel  || null : formState.model      || null;
+  const activeCMake = isVin ? null                        : formState.customMake || null;
+
+  return {
+    current_page:   PAGE_MAP[nextPageId] ?? nextPageId,
+    session_id:     sessionId,
+    last_active_at: new Date().toISOString(),
+    status:         "draft",
+    entry_path:     formState.tab || "vin",
+    landing_url:    typeof window !== "undefined" ? window.location.href : null,
+    user_agent:     typeof navigator !== "undefined" ? navigator.userAgent : null,
+
+    // Primary columns — reflect active tab
+    year:        activeYear,
+    make:        activeMake,
+    model:       activeModel,
+    custom_make: activeCMake,
+
+    // VIN-specific
+    vin:           isVin ? formState.vin || null         : null,
+    vin_decoded:   isVin ? !!formState.vehicleIdentified : false,
+    vin_input:     isVin ? formState.vin || null         : null,
+    submitted_vin: isVin ? formState.vin || null         : null,
+    vin_year:      isVin ? formState.year || null        : null,
+    vin_make:      isVin ? formState.make || null        : null,
+    vin_model:     isVin ? formState.vinModel || null    : null,
+
+    // Manual-specific
+    manual_year:        isManual ? formState.manualYear || null : null,
+    manual_make:        isManual ? formState.manualMake || null : null,
+    manual_model:       isManual ? formState.model      || null : null,
+    manual_custom_make: isManual ? formState.customMake || null : null,
+
+    // Snapshot
+    form_state: JSON.stringify({
+      tab:        formState.tab,
+      vin:        formState.vin,
+      year:       formState.year,
+      make:       formState.make,
+      model:      formState.model,
+      vinModel:   formState.vinModel,
+      customMake: formState.customMake,
+      manualYear: formState.manualYear,
+      manualMake: formState.manualMake,
+    }),
+  };
+}
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function HeroSection({ content }) {
   const router = useRouter();
-  const [showVideo, setShowVideo] = useState(false);
-  const [activeTab, setActiveTab] = useState("vin");
+
+  const [showVideo,  setShowVideo]  = useState(false);
+  const [activeTab,  setActiveTab]  = useState("vin");
   const [showVinHelp, setShowVinHelp] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [errors, setErrors] = useState({
-    year: "",
-    make: "",
-    model: "",
-    customMake: "",
-  });
-  // VIN path state
-  const [vinValue, setVinValue] = useState("");
-  const [vinDecoding, setVinDecoding] = useState(false);
-  const [vinDecodeError, setVinDecodeError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // VIN tab state
+  const [vinValue,        setVinValue]        = useState("");
+  const [vinDecoding,     setVinDecoding]      = useState(false);
+  const [vinDecodeError,  setVinDecodeError]   = useState("");
   const [vinDecodeSuccess, setVinDecodeSuccess] = useState(false);
   const [vinDecoded, setVinDecoded] = useState({
-    year: "",
-    make: "",
-    vinModel: "",
-    vehicleIdentified: "",
+    year: "", make: "", vinModel: "", vehicleIdentified: "",
   });
   const lastDecodedVin = useRef("");
 
-  // Year & Make path state
-  const [year, setYear] = useState("");
-  const [make, setMake] = useState("");
-  const [customMake, setCustomMake] = useState("");
-  const [model, setModel] = useState("");
+  // Manual tab state
+  const [manualYear,  setManualYear]  = useState("");
+  const [manualMake,  setManualMake]  = useState("");
+  const [customMake,  setCustomMake]  = useState("");
+  const [model,       setModel]       = useState("");
+
+  // Field errors
+  const [errors, setErrors] = useState({
+    year: "", make: "", model: "", customMake: "",
+  });
 
   const vinValid = isValidVin(vinValue);
   const isUnsupportedYear =
-    year && (year === "before-2003" || parseInt(year, 10) < 2003);
+    manualYear &&
+    (manualYear === "before-2003" || parseInt(manualYear, 10) < 2003);
 
   // ── Auto-decode VIN ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -325,122 +354,137 @@ export default function HeroSection({ content }) {
 
     decodeVin(vinValue)
       .then(({ year, make, model }) => {
-        // Match raw API make (e.g. "HARLEY-DAVIDSON") to dropdown option
         const matchedMake = matchMakeToOption(make);
-        // For vehicleIdentified display, use the matched label or raw make
-        const displayMake =
-          matchedMake && matchedMake !== "other" ? matchedMake : make;
-        // vehicleIdentified = year + make only — model has its own field
-        const identified = [year, displayMake].filter(Boolean).join(" ");
+        const displayMake = matchedMake && matchedMake !== "other" ? matchedMake : make;
+        const identified  = [year, displayMake].filter(Boolean).join(" ");
+
         if (!identified) {
-          setVinDecodeError(
-            "VIN not recognized. Try switching to Year and Make.",
-          );
+          setVinDecodeError("VIN not recognized. Try switching to Year and Make.");
           setVinDecodeSuccess(false);
           return;
         }
-        setVinDecoded({
-          year,
-          make: matchedMake,
-          vinModel: model,
-          vehicleIdentified: identified,
-        });
-        // Pre-fill Year & Make tab fields
-        setYear(year);
-        setMake(matchedMake);
-        // If make didn't match any option, pre-fill the free-text field with raw value
-        if (matchedMake === "other") {
-          setCustomMake(make);
-        } else {
-          setCustomMake("");
-        }
+
+        setVinDecoded({ year, make: matchedMake, vinModel: model, vehicleIdentified: identified });
         setVinDecodeError("");
         setVinDecodeSuccess(true);
       })
       .catch(() => {
-        setVinDecodeError(
-          "VIN not recognized. Try switching to Year and Make.",
-        );
+        setVinDecodeError("VIN not recognized. Try switching to Year and Make.");
         setVinDecodeSuccess(false);
       })
       .finally(() => setVinDecoding(false));
   }, [vinValid, vinValue]);
 
-  // ── Handle GET YOUR OFFER ──────────────────────────────────────────────────
-  const handleSubmit = () => {
-    const newErrors = {
-      year: "",
-      make: "",
-      model: "",
-      customMake: "",
+  // ── Persist form state to localStorage ────────────────────────────────────
+  // Builds a form-state object matching the RHF shape used in steps.jsx
+  const buildFormStateObj = () => {
+    if (activeTab === "vin") {
+      return {
+        tab:              "vin",
+        vin:              vinValue,
+        vehicleIdentified: vinDecoded.vehicleIdentified,
+        year:             vinDecoded.year,
+        make:             vinDecoded.make,
+        vinModel:         vinDecoded.vinModel,
+        model:            "",
+        customMake:       "",
+        manualYear:       "",
+        manualMake:       "",
+      };
+    }
+    return {
+      tab:              "manual",
+      vin:              "",
+      vehicleIdentified: "",
+      year:             manualYear,
+      make:             manualMake,
+      vinModel:         "",
+      model:            model,
+      customMake:       manualMake === "other" ? customMake : "",
+      manualYear:       manualYear,
+      manualMake:       manualMake,
     };
+  };
 
+  // ── Handle GET YOUR OFFER ──────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    const newErrors = { year: "", make: "", model: "", customMake: "" };
+
+    // ── Validate ────────────────────────────────────────────────────────────
     if (activeTab === "vin") {
       if (!vinValid) {
         setVinDecodeError("Please enter a valid 17-character VIN.");
         return;
       }
-
       if (vinDecoding) {
         setVinDecodeError("Please wait — decoding your VIN.");
         return;
       }
-
       if (!vinDecodeSuccess) {
-        setVinDecodeError(
-          "VIN not recognized. Try switching to Year and Make.",
-        );
+        setVinDecodeError("VIN not recognized. Try switching to Year and Make.");
         return;
       }
-
-      sessionStorage.setItem(
-        HERO_PREFILL_KEY,
-        JSON.stringify({
-          tab: "vin",
-          vin: vinValue,
-          vehicleIdentified: vinDecoded.vehicleIdentified,
-          year: vinDecoded.year,
-          make: vinDecoded.make,
-          vinModel: vinDecoded.vinModel,
-        }),
-      );
     } else {
-      if (!year) {
-        newErrors.year = "Please select a year.";
-      }
+      if (!manualYear) newErrors.year = "Please select a year.";
+      if (isUnsupportedYear) newErrors.year = "We only accept motorcycles from 2003 or newer.";
+      if (!manualMake)  newErrors.make = "Please select a make.";
+      if (manualMake === "other" && !customMake.trim()) newErrors.customMake = "Please enter the make.";
+      if (!model.trim()) newErrors.model = "Please enter the model.";
 
-      if (isUnsupportedYear) {
-        newErrors.year = "We only accept motorcycles from 2003 or newer.";
-      }
-
-      if (!make) {
-        newErrors.make = "Please select a make.";
-      }
-
-      if (make === "other" && !customMake.trim()) {
-        newErrors.customMake = "Please enter the make.";
-      }
-
-      if (!model.trim()) {
-        newErrors.model = "Please enter the model.";
-      }
-
-      // ❗ agar koi error hai to stop
       if (Object.values(newErrors).some((e) => e)) {
         setErrors(newErrors);
         return;
       }
+    }
 
-      sessionStorage.setItem(
-        HERO_PREFILL_KEY,
-        JSON.stringify({
-          tab: "manual",
-          year,
-          make,
-          customMake: make === "other" ? customMake.trim() : "",
-          model: model.trim(),
-        }),
-      );
+    setSubmitting(true);
+
+    try {
+      const formState   = buildFormStateObj();
+      const sessionId   = getOrCreateSessionId();
+      // If a submission already exists (e.g. user filled hero form, went back),
+      // PATCH it. Otherwise POST to create a new row.
+      const existingId  = getSubmissionId();
+      const isCreate    = !existingId;
+      const method      = isCreate ? "POST" : "PATCH";
+      const url         = isCreate
+        ? "/api/submit-appraisal"
+        : `/api/submit-appraisal?id=${existingId}`;
+
+      const row = buildBikeIdRow(formState, sessionId, "vehicle-details");
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(row),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        console.error("[HeroSection] API error:", result.error);
+        // Still navigate — don't block the user for a draft-save failure
+      } else if (isCreate && result.data?.id) {
+        setSubmissionId(result.data.id);
+      }
+
+      // ── Persist to localStorage so steps.jsx can restore on refresh ───────
+      // Step index 1 = "vehicle-details" in the default sequence
+      const stepIndex = 1;
+      saveFormState({ ...formState, photos: [] });
+      saveStepIndex(stepIndex);
+
+      // ── Also write to sessionStorage for the steps page mount handler ─────
+      // (kept for compatibility — steps.jsx checks this first)
+      sessionStorage.setItem(HERO_PREFILL_KEY, JSON.stringify(formState));
+
+    } catch (err) {
+      console.error("[HeroSection] Submit error:", err);
+      // Fall through — still navigate even if save failed
+      const formState = buildFormStateObj();
+      sessionStorage.setItem(HERO_PREFILL_KEY, JSON.stringify(formState));
+    } finally {
+      setSubmitting(false);
     }
 
     router.push("/steps");
@@ -464,7 +508,6 @@ export default function HeroSection({ content }) {
           <div className="hero__inner">
             <div className="hero__left">
               <div className="hero__bikes" aria-hidden="true">
-                {/* <img src="/images/bikes.png" alt="Motorcycles" /> */}
                 <img src={cmsFileUrl(content?.image2)} alt="Motorcycles" />
               </div>
               <div
@@ -482,20 +525,6 @@ export default function HeroSection({ content }) {
                   />
                 </div>
               </div>
-              {/* <div
-                className="hero__play"
-                aria-label="Watch video"
-                role="button"
-                tabIndex="0"
-              >
-                <div className="hero__play-inner">
-                  <img
-                    src="/images/play-button.svg"
-                    alt="Play"
-                    className="hero__play-icon"
-                  />
-                </div>
-              </div> */}
             </div>
 
             <div className="hero__right">
@@ -506,20 +535,16 @@ export default function HeroSection({ content }) {
               >
                 <div
                   id="steps__page"
-                  style={{
-                    minHeight: "unset",
-                    background: "none",
-                    paddingBottom: 0,
-                  }}
+                  style={{ minHeight: "unset", background: "none", paddingBottom: 0 }}
                 >
-                  {/* Tabs */}
+                  {/* ── Tabs ── */}
                   <div className="steps__tabs">
                     <button
                       className={`steps__tab${activeTab === "vin" ? " steps__tab--active" : ""}`}
                       type="button"
                       onClick={() => {
                         setActiveTab("vin");
-                        setFormError("");
+                        setErrors({ year: "", make: "", model: "", customMake: "" });
                       }}
                     >
                       VIN
@@ -529,7 +554,7 @@ export default function HeroSection({ content }) {
                       type="button"
                       onClick={() => {
                         setActiveTab("manual");
-                        setFormError("");
+                        setVinDecodeError("");
                       }}
                     >
                       Year and Make
@@ -539,9 +564,7 @@ export default function HeroSection({ content }) {
                   {/* ── VIN Tab ── */}
                   {activeTab === "vin" && (
                     <div className="steps__tab-content">
-                      <label className="steps__field-label !mb-[0]">
-                        Enter your VIN
-                      </label>
+                      <label className="steps__field-label !mb-[0]">Enter your VIN</label>
                       <div className="steps__input-icon-wrap">
                         <input
                           type="text"
@@ -554,61 +577,38 @@ export default function HeroSection({ content }) {
                             setVinValue(v);
                             setVinDecodeError("");
                             setVinDecodeSuccess(false);
-                            setFormError("");
                             lastDecodedVin.current = "";
                           }}
                         />
                         {vinValid && vinDecoding && (
                           <span className="steps__input-valid-icon">
-                            <svg
-                              className="steps__vin-spinner"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              width="20"
-                              height="20"
-                            >
-                              <circle
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="#d1d5db"
-                                strokeWidth="2.5"
-                              />
-                              <path
-                                d="M12 2a10 10 0 0 1 10 10"
-                                stroke="var(--color-red, #dc2626)"
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                              />
+                            <svg className="steps__vin-spinner" viewBox="0 0 24 24" fill="none" width="20" height="20">
+                              <circle cx="12" cy="12" r="10" stroke="#d1d5db" strokeWidth="2.5" />
+                              <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--color-red, #dc2626)" strokeWidth="2.5" strokeLinecap="round" />
                             </svg>
                           </span>
                         )}
                         {vinValid && !vinDecoding && vinDecodeSuccess && (
                           <span className="steps__input-valid-icon">
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              width="20"
-                              height="20"
-                            >
+                            <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
                               <circle cx="12" cy="12" r="10" fill="#22c55e" />
-                              <polyline
-                                points="7,12 10.5,15.5 17,9"
-                                stroke="#fff"
-                                strokeWidth="2.2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
+                              <polyline points="7,12 10.5,15.5 17,9" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </span>
+                        )}
+                        {vinValid && !vinDecoding && vinDecodeError && (
+                          <span className="steps__input-valid-icon">
+                            <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                              <circle cx="12" cy="12" r="10" fill="#dc2626" />
+                              <line x1="8" y1="8" x2="16" y2="16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+                              <line x1="16" y1="8" x2="8" y2="16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
                             </svg>
                           </span>
                         )}
                       </div>
 
                       {vinDecodeError && (
-                        <p
-                          className="steps__field-error"
-                          style={{ marginTop: "0.4rem" }}
-                        >
+                        <p className="steps__field-error" style={{ marginTop: "0.4rem" }}>
                           {vinDecodeError}
                         </p>
                       )}
@@ -619,39 +619,16 @@ export default function HeroSection({ content }) {
                         onClick={() => setShowVinHelp(true)}
                       >
                         {content?.tab1_popup_label}
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          width="16"
-                          height="16"
-                          aria-hidden="true"
-                        >
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          />
-                          <line
-                            x1="12"
-                            y1="8"
-                            x2="12"
-                            y2="12"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
+                        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" aria-hidden="true">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                          <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                           <circle cx="12" cy="16" r="1" fill="currentColor" />
                         </svg>
                       </button>
 
                       {vinDecodeSuccess && (
                         <>
-                          <label
-                            className="steps__field-label !mb-[0]"
-                            style={{ marginTop: "1rem" }}
-                          >
+                          <label className="steps__field-label !mb-[0]" style={{ marginTop: "1rem" }}>
                             Vehicle identified
                           </label>
                           <input
@@ -660,24 +637,16 @@ export default function HeroSection({ content }) {
                             value={vinDecoded.vehicleIdentified}
                             readOnly
                           />
-                          <label
-                            className="steps__field-label !-mb-[10px]"
-                            style={{ marginTop: "1.2rem" }}
-                          >
+                          <label className="steps__field-label !-mb-[10px]" style={{ marginTop: "1.2rem" }}>
                             Model
                           </label>
-                          <p className="steps__field-hint !mb-[0]">
-                            Pre-filled from VIN — update if needed
-                          </p>
+                          <p className="steps__field-hint !mb-[0]">Pre-filled from VIN — update if needed</p>
                           <input
                             type="text"
                             className="steps__input"
                             value={vinDecoded.vinModel}
                             onChange={(e) =>
-                              setVinDecoded((prev) => ({
-                                ...prev,
-                                vinModel: e.target.value,
-                              }))
+                              setVinDecoded((prev) => ({ ...prev, vinModel: e.target.value }))
                             }
                             placeholder="Enter model"
                           />
@@ -691,46 +660,37 @@ export default function HeroSection({ content }) {
                     <div className="steps__tab-content">
                       <label className="steps__field-label !mb-[0]">Year</label>
                       <CustomSelect
-                        value={year}
+                        value={manualYear}
                         onChange={(v) => {
-                          setYear(v);
+                          setManualYear(v);
                           setErrors((prev) => ({ ...prev, year: "" }));
                         }}
                         options={YEAR_OPTIONS}
                         placeholder="Choose year"
                       />
-                      {errors.year && (
-                        <p className="steps__field-error">{errors.year}</p>
-                      )}
+                      {errors.year && <p className="steps__field-error">{errors.year}</p>}
                       {isUnsupportedYear && <UnsupportedYearBanner />}
 
                       {!isUnsupportedYear && (
                         <>
-                          <label
-                            className="steps__field-label !mb-[0]"
-                            style={{ marginTop: "1.2rem" }}
-                          >
+                          <label className="steps__field-label !mb-[0]" style={{ marginTop: "1.2rem" }}>
                             Make
                           </label>
                           <CustomSelect
-                            value={make}
+                            value={manualMake}
                             onChange={(v) => {
-                              setMake(v);
+                              setManualMake(v);
                               setErrors((prev) => ({ ...prev, make: "" }));
+                              if (v !== "other") setCustomMake("");
                             }}
                             options={MAKE_OPTIONS}
                             placeholder="Choose make"
                           />
-                          {errors.make && (
-                            <p className="steps__field-error">{errors.make}</p>
-                          )}
-                          {/* Enter Make — shown when Other is selected */}
-                          {make === "other" && (
+                          {errors.make && <p className="steps__field-error">{errors.make}</p>}
+
+                          {manualMake === "other" && (
                             <>
-                              <label
-                                className="steps__field-label !mb-[0]"
-                                style={{ marginTop: "1rem" }}
-                              >
+                              <label className="steps__field-label !mb-[0]" style={{ marginTop: "1rem" }}>
                                 Enter Make
                               </label>
                               <input
@@ -741,25 +701,16 @@ export default function HeroSection({ content }) {
                                 autoFocus
                                 onChange={(e) => {
                                   setCustomMake(e.target.value);
-                                  setErrors((prev) => ({
-                                    ...prev,
-                                    customMake: "",
-                                  }));
+                                  setErrors((prev) => ({ ...prev, customMake: "" }));
                                 }}
                               />
-
-                              {make === "other" && errors.customMake && (
-                                <p className="steps__field-error">
-                                  {errors.customMake}
-                                </p>
+                              {errors.customMake && (
+                                <p className="steps__field-error">{errors.customMake}</p>
                               )}
                             </>
                           )}
 
-                          <label
-                            className="steps__field-label !mb-[0]"
-                            style={{ marginTop: "1.2rem" }}
-                          >
+                          <label className="steps__field-label !mb-[0]" style={{ marginTop: "1.2rem" }}>
                             Model
                           </label>
                           <input
@@ -772,26 +723,20 @@ export default function HeroSection({ content }) {
                               setErrors((prev) => ({ ...prev, model: "" }));
                             }}
                           />
-
-                          {errors.model && (
-                            <p className="steps__field-error">{errors.model}</p>
-                          )}
+                          {errors.model && <p className="steps__field-error">{errors.model}</p>}
                         </>
                       )}
                     </div>
                   )}
-
-                  {/* {formError && (
-                    <p className="steps__field-error" style={{ marginTop: "0.6rem" }}>{formError}</p>
-                  )} */}
 
                   <button
                     className="form__submit-btn"
                     type="button"
                     style={{ marginTop: "20px" }}
                     onClick={handleSubmit}
+                    disabled={submitting}
                   >
-                    {content?.form_btn_heading}
+                    {submitting ? "Please wait…" : content?.form_btn_heading}
                   </button>
                 </div>
               </div>
