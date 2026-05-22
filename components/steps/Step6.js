@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import Text from "../text";
+import { getSubmissionId } from "@/lib/draftSession";
 
 export default function Step6({ content }) {
   const { watch, setValue } = useFormContext();
@@ -9,21 +10,152 @@ export default function Step6({ content }) {
   const [dragging, setDragging] = useState(false);
   const photos = watch("photos") || [];
 
-  const addFiles = (files) => {
+  // LOAD SAVED PHOTOS ON REFRESH
+  useEffect(() => {
+    const loadPhotos = async () => {
+      const submissionId = getSubmissionId();
+      if (!submissionId) return;
+      try {
+        const res = await fetch(`/api/get-photos?submissionId=${submissionId}`);
+        const result = await res.json();
+        if (!result.success) return;
+        const formatted = result.photos.map((p) => ({
+          id: p.id,
+          url: p.preview_url,
+          name: p.original_filename,
+          uploaded: true,
+          progress: 100,
+          storage_path: p.storage_path,
+          dbId: p.id,
+        }));
+        setValue("photos", formatted);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadPhotos();
+  }, []);
+
+  // INSTANT UPLOAD
+  const addFiles = async (files) => {
+    const submissionId = getSubmissionId();
+    if (!submissionId) {
+      alert("Please complete Step 1 first.");
+      return;
+    }
     const incoming = Array.from(files).map((file) => ({
-      id: `${file.name}-${file.size}-${Date.now()}`,
-      url: URL.createObjectURL(file),
+      localId: crypto.randomUUID(),
       name: file.name,
-      file, // ← keep the real File object for Supabase Storage upload
+      url: URL.createObjectURL(file),
+      file,
+      progress: 0,
+      uploading: true,
+      uploaded: false,
     }));
-    setValue("photos", [...photos, ...incoming].slice(0, 30));
+    const updatedPhotos = [...photos, ...incoming].slice(0, 30);
+    setValue("photos", updatedPhotos);
+
+    for (const photo of incoming) {
+      const formData = new FormData();
+
+      formData.append("submissionId", submissionId);
+      formData.append("photos", photo.file);
+
+      // fake progress animation
+      let progress = 0;
+
+      const interval = setInterval(() => {
+        progress += 10;
+
+        setValue(
+          "photos",
+          (watch("photos") || []).map((p) =>
+            p.localId === photo.localId
+              ? {
+                  ...p,
+                  progress: Math.min(progress, 90),
+                }
+              : p,
+          ),
+        );
+      }, 200);
+
+      try {
+        const res = await fetch("/api/upload-photos", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await res.json();
+
+        clearInterval(interval);
+
+        if (!result.success || !result.photos?.length) {
+          throw new Error("Upload failed");
+        }
+
+        const uploaded = result.photos[0];
+
+        setValue(
+          "photos",
+          (watch("photos") || []).map((p) =>
+            p.localId === photo.localId
+              ? {
+                  ...p,
+                  progress: 100,
+                  uploading: false,
+                  uploaded: true,
+                  dbId: uploaded.id,
+                  storage_path: uploaded.storage_path,
+                  url: uploaded.preview_url,
+                }
+              : p,
+          ),
+        );
+      } catch (err) {
+        clearInterval(interval);
+
+        setValue(
+          "photos",
+          (watch("photos") || []).map((p) =>
+            p.localId === photo.localId
+              ? {
+                  ...p,
+                  uploading: false,
+                  failed: true,
+                }
+              : p,
+          ),
+        );
+
+        console.error(err);
+      }
+    }
   };
 
-  const removePhoto = (id) => {
-    setValue(
-      "photos",
-      photos.filter((p) => p.id !== id),
-    );
+  // REMOVE PHOTO
+  const removePhoto = async (photo) => {
+    try {
+      if (photo.dbId) {
+        await fetch("/api/delete-photo", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            photoId: photo.dbId,
+            storagePath: photo.storage_path,
+          }),
+        });
+      }
+
+      setValue(
+        "photos",
+        photos.filter((p) => p !== photo),
+      );
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleDrop = (e) => {
@@ -105,7 +237,7 @@ export default function Step6({ content }) {
               onClick={() => inputRef.current?.click()}
             >
               Choose photos
-            </button> 
+            </button>
             <button
               type="button"
               className="steps__btn-continue steps__btn-continue-2 steps__upload-btn"
@@ -120,16 +252,17 @@ export default function Step6({ content }) {
           <span>Up to 30 photos</span>
           <span>Uploads saved with your draft automatically.</span>
         </div>
- 
+
         {photos.length > 0 && (
           <div className="steps__upload-thumbs">
             {photos.map((p) => (
-              <div key={p.id} className="steps__upload-thumb">
-                <img src={p.url} alt={p.name} />
+              <div key={p.localId || p.id} className="steps__upload-thumb">
+               <img src={p.url} alt={p.name} />
+
                 <button
                   type="button"
                   className="steps__upload-thumb-remove"
-                  onClick={() => removePhoto(p.id)}
+                  onClick={() => removePhoto(p)}
                   aria-label="Remove photo"
                 >
                   <svg viewBox="0 0 24 24" fill="none" width="12" height="12">

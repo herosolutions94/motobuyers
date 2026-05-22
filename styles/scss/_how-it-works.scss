@@ -136,6 +136,8 @@
     display: flex;
     flex-direction: column;
     gap: 4rem;
+    max-width: 100rem;
+    margin: auto;
   }
 
   .hiw-steps__item {

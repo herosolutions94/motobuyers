@@ -49,7 +49,7 @@ export default function FAQsPage({ result }) {
       <main id="faq__page">
         <PageHeroBanner
           title={content?.banner_heading}
-          subtitle=<Text string={content?.banner_text} />
+          // subtitle=<Text string={content?.banner_text} />
         />
         <FaqSection FAQ_GROUPS={FAQ_GROUPS} />
       </main>

@@ -1,5 +1,4 @@
-import Head from "next/head";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import Contain from "../components/contain";
 import Step1 from "../components/steps/Step1";
@@ -16,6 +15,15 @@ import Step7 from "../components/steps/Step7";
 import Step8 from "../components/steps/Step8";
 
 import { submitAppraisal } from "../lib/submitAppraisal";
+import { saveDraft, savePhotos } from "../lib/saveDraft";
+import {
+  clearDraftSession,
+  getSubmissionId,
+  saveFormState,
+  loadFormState,
+  saveStepIndex,
+  loadStepIndex,
+} from "../lib/draftSession";
 import { HERO_PREFILL_KEY } from "../components/HeroSection";
 
 import http from "@/helpers/http";
@@ -45,18 +53,18 @@ export const getServerSideProps = async (context) => {
 
 // ─── Step IDs ────────────────────────────────────────────────────────────────
 const STEP_IDS = [
-  "bike-id",          // 1
-  "vehicle-details",  // 2
-  "cosmetic-rating",  // 3
-  "cosmetic-issues",  // 3A  — skipped if cosmetic === 5
-  "mech-rating",      // 4
-  "mech-issues",      // 4B  — skipped if mechanical === 5
-  "service-maint",    // 4C  — always shown
-  "tire-mileage",     // 4D  — skipped if mileage < 1000
-  "title-financial",  // 5
-  "photos",           // 6
-  "contact-submit",   // 7
-  "thank-you",        // 8
+  "bike-id",
+  "vehicle-details",
+  "cosmetic-rating",
+  "cosmetic-issues",
+  "mech-rating",
+  "mech-issues",
+  "service-maint",
+  "tire-mileage",
+  "title-financial",
+  "photos",
+  "contact-submit",
+  "thank-you",
 ];
 
 // ─── Dynamic sequence builder ────────────────────────────────────────────────
@@ -76,50 +84,109 @@ function buildSequence(watchedValues) {
 
 // ─── Step title (right of progress bar) ─────────────────────────────────────
 const STEP_TITLE_MAP = {
-  "bike-id": "Bike Details",
+  "bike-id":         "Bike Details",
   "vehicle-details": "Bike Details",
   "cosmetic-rating": "Cosmetic Condition",
   "cosmetic-issues": "Cosmetic Issues",
-  "mech-rating": "Mechanical Condition",
-  "mech-issues": "Mechanical Issue",
-  "service-maint": "Service and Maintenance Items",
-  "tire-mileage": "Tire Millage",
+  "mech-rating":     "Mechanical Condition",
+  "mech-issues":     "Mechanical Issue",
+  "service-maint":   "Service and Maintenance Items",
+  "tire-mileage":    "Tire Millage",
   "title-financial": "Title and Financial Info",
-  photos: "Photos",
-  "contact-submit": "Contact Info",
-  "thank-you": "Submission Complete",
+  photos:            "Photos",
+  "contact-submit":  "Contact Info",
+  "thank-you":       "Submission Complete",
 };
 
 // ─── Step label (left of progress bar) ──────────────────────────────────────
 const STEP_LABEL_MAP = {
-  "bike-id": "Step 1 of 6",
+  "bike-id":         "Step 1 of 6",
   "vehicle-details": "Step 1 of 6",
   "cosmetic-rating": "Step 2 of 6",
   "cosmetic-issues": "Step 2 of 6",
-  "mech-rating": "Step 3 of 6",
-  "mech-issues": "Step 3 of 6",
-  "service-maint": "Step 3 of 6",
-  "tire-mileage": "Step 3 of 6",
+  "mech-rating":     "Step 3 of 6",
+  "mech-issues":     "Step 3 of 6",
+  "service-maint":   "Step 3 of 6",
+  "tire-mileage":    "Step 3 of 6",
   "title-financial": "Step 4 of 6",
-  photos: "Step 5 of 6",
-  "contact-submit": "Step 6 of 6",
-  "thank-you": "Done",
+  photos:            "Step 5 of 6",
+  "contact-submit":  "Step 6 of 6",
+  "thank-you":       "Done",
 };
 
 // ─── Progress % per step ID ──────────────────────────────────────────────────
 const PROGRESS_MAP = {
-  "bike-id": 8,
+  "bike-id":         8,
   "vehicle-details": 17,
   "cosmetic-rating": 27,
   "cosmetic-issues": 36,
-  "mech-rating": 45,
-  "mech-issues": 54,
-  "service-maint": 63,
-  "tire-mileage": 72,
+  "mech-rating":     45,
+  "mech-issues":     54,
+  "service-maint":   63,
+  "tire-mileage":    72,
   "title-financial": 81,
-  photos: 88,
-  "contact-submit": 94,
-  "thank-you": 100,
+  photos:            88,
+  "contact-submit":  94,
+  "thank-you":       100,
+};
+
+// ─── Default form values ─────────────────────────────────────────────────────
+const DEFAULT_VALUES = {
+  // Step 1
+  tab: "vin",
+  vin: "",
+  vehicleIdentified: "",
+  year: "",
+  make: "",
+  vinModel: "",
+  model: "",
+  customMake: "",
+  // Separate manual-tab fields so VIN decode never pollutes the manual tab
+  manualYear: "",
+  manualMake: "",
+  // Step 2
+  mileage: "",
+  zip: "",
+  ridden: "",
+  email: "",
+  // Step 3
+  cosmetic: null,
+  // Step 3A
+  cosmeticIssues: [],
+  cosmeticOtherChecked: false,
+  cosmeticOtherText: "",
+  noIssues: false,
+  // Step 4
+  mechanical: null,
+  // Step 4B
+  mechanicalIssues: [],
+  mechOtherChecked: false,
+  mechOtherText: "",
+  mechNoIssues: false,
+  // Step 4C
+  serviceItems: [],
+  serviceOtherChecked: false,
+  serviceOtherText: "",
+  serviceCircleOption: "",
+  // Step 4D
+  frontTireMiles: 0,
+  rearTireMiles: 0,
+  frontTireNotSure: false,
+  rearTireNotSure: false,
+  // Step 5
+  titleType: "",
+  hasLoan: "",
+  payoffAmount: "",
+  notSurePayoff: false,
+  askingPrice: "",
+  notSurePrice: false,
+  // Step 6
+  photos: [],
+  // Step 7
+  firstName: "",
+  phone: "",
+  contactEmail: "",
+  notes: "",
 };
 
 export default function StepsPage({ result }) {
@@ -127,142 +194,120 @@ export default function StepsPage({ result }) {
 
   const methods = useForm({
     mode: "onTouched",
-    defaultValues: {
-      // Step 1
-      tab: "vin",
-      vin: "",
-      vehicleIdentified: "",
-      year: "",
-      make: "",
-      vinModel: "",
-      model: "",
-      customMake: "",
-      // Step 2
-      mileage: "",
-      zip: "",
-      ridden: "",
-      email: "",
-      // Step 3
-      cosmetic: null,
-      // Step 3A
-      cosmeticIssues: [],
-      cosmeticOtherChecked: false,
-      cosmeticOtherText: "",
-      noIssues: false,
-      // Step 4
-      mechanical: null,
-      // Step 4B
-      mechanicalIssues: [],
-      mechOtherChecked: false,
-      mechOtherText: "",
-      mechNoIssues: false,
-      // Step 4C
-      serviceItems: [],
-      serviceOtherChecked: false,
-      serviceOtherText: "",
-      serviceCircleOption: "",
-      // Step 4D
-      frontTireMiles: 0,
-      rearTireMiles: 0,
-      frontTireNotSure: false,
-      rearTireNotSure: false,
-      // Step 5
-      titleType: "",
-      hasLoan: "",
-      payoffAmount: "",
-      notSurePayoff: false,
-      askingPrice: "",
-      notSurePrice: false,
-      // Step 5B
-      photos: [],
-      // Step 6
-      firstName: "",
-      phone: "",
-      contactEmail: "",
-      notes: "",
-    },
+    defaultValues: DEFAULT_VALUES,
   });
 
   const { watch, trigger, handleSubmit } = methods;
   const watchedValues = watch(["cosmetic", "mechanical", "mileage"]);
   const valuesObj = {
-    cosmetic: watchedValues[0],
+    cosmetic:   watchedValues[0],
     mechanical: watchedValues[1],
-    mileage: watchedValues[2],
+    mileage:    watchedValues[2],
   };
 
-  const sequence = buildSequence(valuesObj);
+  const sequence    = buildSequence(valuesObj);
   const [currentIndex, setCurrentIndex] = useState(0);
+  // Track whether mount-time restore has completed
+  const restoredRef = useRef(false);
 
-  // ─── Read hero prefill from sessionStorage on mount ──────────────────────
+  // ─── Mount: restore form + step from localStorage if a draft exists ───────
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(HERO_PREFILL_KEY);
-      if (!raw) return;
-      sessionStorage.removeItem(HERO_PREFILL_KEY);
+    // Prevent double-run in StrictMode
+    if (restoredRef.current) return;
+    restoredRef.current = true;
 
-      const prefill = JSON.parse(raw);
+    const doRestore = async () => {
+      // ── Priority 1: hero section prefill (user filled hero form) ──────────
+      try {
+        const raw = sessionStorage.getItem(HERO_PREFILL_KEY);
+        if (raw) {
+          sessionStorage.removeItem(HERO_PREFILL_KEY);
+          const prefill = JSON.parse(raw);
+          Object.entries(prefill).forEach(([key, value]) => {
+            methods.setValue(key, value, { shouldValidate: false });
+          });
+          // Hero always brings user to Step 2
+          const freshSeq = buildSequence({ cosmetic: null, mechanical: null, mileage: "" });
+          const step2Idx = freshSeq.indexOf("vehicle-details");
+          if (step2Idx > 0) {
+            setCurrentIndex(step2Idx);
+            saveStepIndex(step2Idx);
+          }
+          return;
+        }
+      } catch { /* ignore */ }
 
-      Object.entries(prefill).forEach(([key, value]) => {
-        methods.setValue(key, value, { shouldValidate: false });
-      });
+      // ── Priority 2: localStorage draft restore (page refresh) ─────────────
+      const submissionId = getSubmissionId();
+      if (!submissionId) return;
 
-      const freshSeq = buildSequence({
-        cosmetic: null,
-        mechanical: null,
-        mileage: "",
-      });
-      const step2Index = freshSeq.indexOf("vehicle-details");
-      if (step2Index > 0) setCurrentIndex(step2Index);
-    } catch {
-      // Silently ignore parse errors
-    }
+      const savedState = loadFormState();
+      const savedIndex = loadStepIndex();
+
+      if (savedState) {
+        // Re-hydrate all saved fields (photos are stripped on save, that's fine)
+        Object.entries(savedState).forEach(([key, value]) => {
+          if (key !== "photoCount") {
+            methods.setValue(key, value ?? DEFAULT_VALUES[key] ?? "", {
+              shouldValidate: false,
+            });
+          }
+        });
+      }
+
+      if (savedIndex !== null && savedIndex > 0) {
+        setCurrentIndex(savedIndex);
+      }
+    };
+
+    doRestore();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const currentStepId = sequence[currentIndex];
-  const progress = PROGRESS_MAP[currentStepId] ?? 0;
-  const isLastStep = currentStepId === "thank-you";
-  const isSubmitStep = currentStepId === "contact-submit";
-  const isPhotosStep = currentStepId === "photos";
+  // ─── Auto-sync: email (Step 2) → contactEmail (Step 7) ───────────────────
+  // Whenever the user types their email in Step 2, mirror it to contactEmail
+  // so Step 7 is pre-filled. The user can still overwrite it in Step 7.
+  const emailValue = watch("email");
+  useEffect(() => {
+    const current = methods.getValues("contactEmail");
+    // Only auto-fill if the contactEmail field is still empty or matches the
+    // previous email value (i.e. user hasn't manually changed it)
+    if (emailValue && !current) {
+      methods.setValue("contactEmail", emailValue, { shouldValidate: false });
+    }
+  }, [emailValue, methods]);
 
-  // ─── Validation rules per step ───────────────────────────────────────────
+  const currentStepId = sequence[currentIndex];
+  const progress      = PROGRESS_MAP[currentStepId] ?? 0;
+  const isLastStep    = currentStepId === "thank-you";
+  const isSubmitStep  = currentStepId === "contact-submit";
+  const isPhotosStep  = currentStepId === "photos";
+
+  // ─── Validation rules per step ────────────────────────────────────────────
   const STEP_FIELDS = {
     "bike-id": async (vals) => {
       const tab = vals.tab;
       if (tab === "vin") return await trigger("vin");
-      const yr = vals.year;
+      // Manual tab uses manualYear / manualMake (isolated from VIN decode)
+      const yr = vals.manualYear;
       if (yr === "before-2003" || (yr && parseInt(yr, 10) < 2003)) return false;
-
-      // Trigger RHF-registered fields (year, make, model all have required rules)
-      const rhfValid = await trigger(["year", "make", "model"]);
-
-      // customMake has no required rule in register() to avoid firing on mount,
-      // so we validate it manually here instead.
-      if (vals.make === "other" && !vals.customMake?.trim()) {
-        methods.setError("customMake", {
-          type: "manual",
-          message: "Please enter the make",
-        });
+      const rhfValid = await trigger(["manualYear", "manualMake", "model"]);
+      if (vals.manualMake === "other" && !vals.customMake?.trim()) {
+        methods.setError("customMake", { type: "manual", message: "Please enter the make" });
         return false;
       }
       methods.clearErrors("customMake");
-
       return rhfValid;
     },
     "vehicle-details": () => trigger(["mileage", "zip", "ridden", "email"]),
     "cosmetic-rating": () => trigger("cosmetic"),
     "cosmetic-issues": () => {
       const vals = methods.getValues();
-      const hasSelection =
-        vals.cosmeticIssues?.length > 0 ||
-        vals.cosmeticOtherChecked ||
-        vals.noIssues;
-      if (!hasSelection) {
+      const ok = vals.cosmeticIssues?.length > 0 || vals.cosmeticOtherChecked || vals.noIssues;
+      if (!ok) {
         methods.setError("cosmeticIssues", {
           type: "manual",
-          message:
-            "Please select at least one option or choose 'No cosmetic issues'",
+          message: "Please select at least one option or choose 'No cosmetic issues'",
         });
         return false;
       }
@@ -272,15 +317,11 @@ export default function StepsPage({ result }) {
     "mech-rating": () => trigger("mechanical"),
     "mech-issues": () => {
       const vals = methods.getValues();
-      const hasSelection =
-        vals.mechanicalIssues?.length > 0 ||
-        vals.mechOtherChecked ||
-        vals.mechNoIssues;
-      if (!hasSelection) {
+      const ok = vals.mechanicalIssues?.length > 0 || vals.mechOtherChecked || vals.mechNoIssues;
+      if (!ok) {
         methods.setError("mechanicalIssues", {
           type: "manual",
-          message:
-            "Please select at least one option or choose 'No mechanical issues'",
+          message: "Please select at least one option or choose 'No mechanical issues'",
         });
         return false;
       }
@@ -289,30 +330,22 @@ export default function StepsPage({ result }) {
     },
     "service-maint": () => {
       const vals = methods.getValues();
-      const hasSelection =
-        vals.serviceItems?.length > 0 ||
-        vals.serviceOtherChecked ||
-        vals.serviceCircleOption;
-      if (!hasSelection) {
-        methods.setError("serviceItems", {
-          type: "manual",
-          message: "Please select at least one option",
-        });
+      const ok = vals.serviceItems?.length > 0 || vals.serviceOtherChecked || vals.serviceCircleOption;
+      if (!ok) {
+        methods.setError("serviceItems", { type: "manual", message: "Please select at least one option" });
         return false;
       }
       methods.clearErrors("serviceItems");
       return true;
     },
-    // ── Step 4D: both tires must have a mileage value OR be toggled unknown ──
     "tire-mileage": () => {
       const vals = methods.getValues();
-      const frontDone = vals.frontTireNotSure || vals.frontTireMiles > 0;
-      const rearDone  = vals.rearTireNotSure  || vals.rearTireMiles  > 0;
-      if (!frontDone || !rearDone) {
+      const frontOk = vals.frontTireNotSure || vals.frontTireMiles > 0;
+      const rearOk  = vals.rearTireNotSure  || vals.rearTireMiles  > 0;
+      if (!frontOk || !rearOk) {
         methods.setError("tireMileage", {
           type: "manual",
-          message:
-            "Please set the mileage or toggle \"I don't know\" for each tire",
+          message: "Please set the mileage or toggle \"I don't know\" for each tire",
         });
         return false;
       }
@@ -320,37 +353,90 @@ export default function StepsPage({ result }) {
       return true;
     },
     "title-financial": () => trigger(["titleType", "hasLoan"]),
-    photos: () => true,
-    "contact-submit": () => trigger(["firstName", "phone", "contactEmail"]),
-    "thank-you": () => true,
+    photos:            () => true,
+    "contact-submit":  () => trigger(["firstName", "phone", "contactEmail"]),
+    "thank-you":       () => true,
   };
 
+  // ─── persist helpers ──────────────────────────────────────────────────────
+  // Save RHF state + step index to localStorage so refresh restores them.
+  const persistLocally = useCallback((formData, stepIndex) => {
+    saveFormState(formData);
+    saveStepIndex(stepIndex);
+  }, []);
+
+  // ─── goNext ───────────────────────────────────────────────────────────────
+  // Validate → save draft (with destination step as current_page) → advance
   const goNext = useCallback(async () => {
     const validate = STEP_FIELDS[currentStepId];
     const valid = validate ? await validate(methods.getValues()) : true;
     if (!valid) return;
-    setCurrentIndex((i) => Math.min(i + 1, sequence.length - 1));
-  }, [currentStepId, sequence.length]);
 
-  const goBack = useCallback(() => {
-    setCurrentIndex((i) => Math.max(i - 1, 0));
-  }, []);
+    const formData = methods.getValues();
+    const nextIndex = Math.min(currentIndex + 1, sequence.length - 1);
+    const nextStepId = sequence[nextIndex];
 
-  // ─── Start Over: reset form and jump back to Step 1 ─────────────────────
+    // Save photos separately when leaving the photos step
+    if (currentStepId === "photos") {
+      try {
+        await savePhotos(formData.photos ?? []);
+      } catch (err) {
+        console.error("[goNext] savePhotos error:", err);
+      }
+    }
+
+    // saveDraft: passes BOTH current step (what data to save) and next step
+    // (what to store as current_page in the row)
+    try {
+      await saveDraft(currentStepId, nextStepId, formData);
+    } catch (err) {
+      console.error("[goNext] saveDraft error:", err);
+    }
+
+    // Always persist locally for refresh restore
+    persistLocally(formData, nextIndex);
+
+    setCurrentIndex(nextIndex);
+  }, [currentStepId, currentIndex, sequence, methods, persistLocally]);
+
+  // ─── goBack ───────────────────────────────────────────────────────────────
+  // Save current step data (with PREVIOUS step as current_page) → go back.
+  const goBack = useCallback(async () => {
+    const formData   = methods.getValues();
+    const prevIndex  = Math.max(currentIndex - 1, 0);
+    const prevStepId = sequence[prevIndex];
+
+    // bike-id is the create step — never PATCH back to it
+    if (currentStepId !== "bike-id") {
+      try {
+        // nextPageId = prevStepId so current_page reflects where user landed
+        await saveDraft(currentStepId, prevStepId, formData);
+      } catch (err) {
+        console.error("[goBack] saveDraft error:", err);
+      }
+    }
+
+    persistLocally(formData, prevIndex);
+    setCurrentIndex(prevIndex);
+  }, [currentStepId, currentIndex, sequence, methods, persistLocally]);
+
+  // ─── Start Over ───────────────────────────────────────────────────────────
   const handleStartOver = useCallback(() => {
-    methods.reset();
+    methods.reset(DEFAULT_VALUES);
+    clearDraftSession(); // clears everything including session_id
     setCurrentIndex(0);
   }, [methods]);
 
-  const [submitting, setSubmitting] = useState(false);
+  // ─── Final submit ─────────────────────────────────────────────────────────
+  const [submitting, setSubmitting]   = useState(false);
   const [submitError, setSubmitError] = useState("");
 
   const onSubmit = async (data) => {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const { appraisalId } = await submitAppraisal(data);
-      // console.log(" MotoBuyers Submission saved", appraisalId, data);
+      await submitAppraisal(data);
+      // submitAppraisal calls clearSubmissionData() internally
       setCurrentIndex(sequence.length - 1);
     } catch (err) {
       setSubmitError(err.message || "Something went wrong. Please try again.");
@@ -367,6 +453,7 @@ export default function StepsPage({ result }) {
     }
   };
 
+  // ─── Derived display values ───────────────────────────────────────────────
   const allValues = watch();
 
   const bikeLabel = (() => {
@@ -375,7 +462,7 @@ export default function StepsPage({ result }) {
       const m = allValues.vinModel || "";
       return [allValues.year, allValues.make, m].filter(Boolean).join(" • ");
     }
-    if (tab === "make" && allValues.year && allValues.make && allValues.model) {
+    if (tab === "manual" && allValues.year && allValues.make && allValues.model) {
       return `${allValues.year} • ${allValues.make} • ${allValues.model}`;
     }
     if (allValues.vin) return `VIN: ${allValues.vin}`;
@@ -398,10 +485,11 @@ export default function StepsPage({ result }) {
     const v = allValues;
     if (currentStepId === "bike-id") {
       if (v.tab === "vin") return !!v.vin;
-      const yr = v.year;
+      // Manual tab: validate manualYear / manualMake (isolated from VIN decode)
+      const yr = v.manualYear;
       if (!yr || yr === "before-2003" || parseInt(yr, 10) < 2003) return false;
-      if (!v.make) return false;
-      if (v.make === "other" && !v.customMake) return false;
+      if (!v.manualMake) return false;
+      if (v.manualMake === "other" && !v.customMake) return false;
       return !!v.model;
     }
     if (currentStepId === "vehicle-details")
@@ -409,32 +497,16 @@ export default function StepsPage({ result }) {
     if (currentStepId === "cosmetic-rating")
       return v.cosmetic !== null && v.cosmetic !== undefined;
     if (currentStepId === "cosmetic-issues")
-      return !!(
-        v.cosmeticIssues?.length ||
-        v.cosmeticOtherChecked ||
-        v.noIssues
-      );
+      return !!(v.cosmeticIssues?.length || v.cosmeticOtherChecked || v.noIssues);
     if (currentStepId === "mech-rating")
       return v.mechanical !== null && v.mechanical !== undefined;
     if (currentStepId === "mech-issues")
-      return !!(
-        v.mechanicalIssues?.length ||
-        v.mechOtherChecked ||
-        v.mechNoIssues
-      );
+      return !!(v.mechanicalIssues?.length || v.mechOtherChecked || v.mechNoIssues);
     if (currentStepId === "service-maint")
-      return !!(
-        v.serviceItems?.length ||
-        v.serviceOtherChecked ||
-        v.serviceCircleOption
-      );
-    // ── Step 4D: both tires must be set or toggled unknown ──
-    if (currentStepId === "tire-mileage") {
-      return (
-        (v.frontTireNotSure || v.frontTireMiles > 0) &&
-        (v.rearTireNotSure  || v.rearTireMiles  > 0)
-      );
-    }
+      return !!(v.serviceItems?.length || v.serviceOtherChecked || v.serviceCircleOption);
+    if (currentStepId === "tire-mileage")
+      return (v.frontTireNotSure || v.frontTireMiles > 0) &&
+             (v.rearTireNotSure  || v.rearTireMiles  > 0);
     if (currentStepId === "title-financial")
       return !!(v.titleType && v.hasLoan);
     if (currentStepId === "contact-submit")
@@ -446,9 +518,7 @@ export default function StepsPage({ result }) {
     currentStepId === "bike-id"
       ? "Get my Offer"
       : isPhotosStep
-        ? hasPhotos
-          ? "Continue"
-          : "Skip for now"
+        ? hasPhotos ? "Continue" : "Skip for now"
         : isSubmitStep
           ? "Submit for Appraisal"
           : "Continue";
@@ -469,58 +539,32 @@ export default function StepsPage({ result }) {
               <div className="right">{STEP_TITLE_MAP[currentStepId] ?? ""}</div>
             </div>
             <div className="steps__progress-track">
-              <div
-                className="steps__progress-fill"
-                style={{ width: `${progress}%` }}
-              />
-              <div
-                className="steps__progress-bike"
-                style={{ left: `${progress}%` }}
-              />
+              <div className="steps__progress-fill" style={{ width: `${progress}%` }} />
+              <div className="steps__progress-bike" style={{ left: `${progress}%` }} />
             </div>
           </Contain>
         </div>
 
         {/* Step Content */}
         <Contain className="!z-[auto]">
-          {currentStepId === "bike-id" && (
-            <Step1 bikeLabel={bikeLabel} content={content} />
-          )}
-          {currentStepId === "vehicle-details" && (
-            <Step2 bikeLabel={bikeLabel} content={content} />
-          )}
-          {currentStepId === "cosmetic-rating" && (
-            <Step3 bikeLabel={bikeLabel} content={content} />
-          )}
-          {currentStepId === "cosmetic-issues" && (
-            <Step3b bikeLabel={bikeLabel} content={content} />
-          )}
-          {currentStepId === "mech-rating" && (
-            <Step4 bikeLabel={bikeLabel} content={content} />
-          )}
-          {currentStepId === "mech-issues" && (
-            <Step4b bikeLabel={bikeLabel} content={content} />
-          )}
-          {currentStepId === "service-maint" && (
-            <Step4c bikeLabel={bikeLabel} content={content} />
-          )}
-          {currentStepId === "tire-mileage" && (
-            <Step4d bikeLabel={bikeLabel} content={content} />
-          )}
-          {currentStepId === "title-financial" && (
-            <Step5 bikeLabel={bikeLabel} content={content} />
-          )}
-          {currentStepId === "photos" && <Step6 content={content} />}
-          {currentStepId === "contact-submit" && (
-            <Step7 bikeLabel={bikeLabel} content={content} />
-          )}
-          {currentStepId === "thank-you" && (
+          {currentStepId === "bike-id"         && <Step1 bikeLabel={bikeLabel} content={content} />}
+          {currentStepId === "vehicle-details" && <Step2 bikeLabel={bikeLabel} content={content} />}
+          {currentStepId === "cosmetic-rating" && <Step3 bikeLabel={bikeLabel} content={content} />}
+          {currentStepId === "cosmetic-issues" && <Step3b bikeLabel={bikeLabel} content={content} />}
+          {currentStepId === "mech-rating"     && <Step4 bikeLabel={bikeLabel} content={content} />}
+          {currentStepId === "mech-issues"     && <Step4b bikeLabel={bikeLabel} content={content} />}
+          {currentStepId === "service-maint"   && <Step4c bikeLabel={bikeLabel} content={content} />}
+          {currentStepId === "tire-mileage"    && <Step4d bikeLabel={bikeLabel} content={content} />}
+          {currentStepId === "title-financial" && <Step5 bikeLabel={bikeLabel} content={content} />}
+          {currentStepId === "photos"          && <Step6 content={content} />}
+          {currentStepId === "contact-submit"  && <Step7 bikeLabel={bikeLabel} content={content} />}
+          {currentStepId === "thank-you"       && (
             <Step8
               bikeLabel={bikeLabel}
               content={content}
               thank_steps={thank_steps}
               firstName={allValues.firstName}
-              onStartOver={handleStartOver}     // ← wired up
+              onStartOver={handleStartOver}
             />
           )}
         </Contain>
@@ -531,11 +575,7 @@ export default function StepsPage({ result }) {
             <Contain>
               <div className="steps__footer-nav-inner">
                 {currentIndex > 0 ? (
-                  <button
-                    className="steps__btn-back"
-                    onClick={goBack}
-                    aria-label="Back"
-                  >
+                  <button className="steps__btn-back" onClick={goBack} aria-label="Back">
                     <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
                       <path
                         d="M15 18l-6-6 6-6"
@@ -553,20 +593,13 @@ export default function StepsPage({ result }) {
                   className="steps__btn-continue"
                   onClick={handleContinue}
                   disabled={!isStepValid || submitting}
-                  style={
-                    !isStepValid || submitting
-                      ? { opacity: 0.5, cursor: "not-allowed" }
-                      : {}
-                  }
+                  style={!isStepValid || submitting ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                 >
                   {submitting ? "Submitting…" : continueBtnLabel}
                 </button>
               </div>
               {submitError && (
-                <p
-                  className="steps__field-error"
-                  style={{ textAlign: "center", marginTop: "0.75rem" }}
-                >
+                <p className="steps__field-error" style={{ textAlign: "center", marginTop: "0.75rem" }}>
                   {submitError}
                 </p>
               )}

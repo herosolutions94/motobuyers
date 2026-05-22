@@ -86,14 +86,24 @@
       object-fit: contain;
     }
   }
-  .hero__form-card {
+  .hero__right {
+    position: relative;
     width: 100%;
     max-width: 55rem;
+    @media (max-width: 991px) {
+      margin: auto;
+    }
+  }
+  .hero__form-card {
     background: var(--color-white);
     padding: 4rem;
     border-radius: 3rem;
     border: 0.1rem solid #ffd3d3;
     box-shadow: var(--shadow-form);
+    @media (min-width: 992px) {
+      position: absolute;
+      inset: 0 0 auto;
+    }
     /* ─── FORM STYLES (Hero) ─── */
     .form__tabs-row {
       position: relative;
@@ -208,6 +218,17 @@
         color: var(--color-red);
         background: var(--color-efefef);
       }
+    }
+  }
+  #steps__page {
+    .steps__tab-content {
+      gap: 0;
+    }
+    .steps__field-label {
+      padding-bottom: 0.6rem !important;
+    }
+    .steps__vin-link {
+      margin-top: 1rem;
     }
   }
 }

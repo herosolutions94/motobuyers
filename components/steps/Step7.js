@@ -1,12 +1,24 @@
 import { useFormContext } from "react-hook-form";
 import InputMask from "react-input-mask";
 import Text from "../text";
+import { useEffect } from "react";
 
 export default function Step7({ content }) {
   const {
     register,
+    watch,
+    setValue,
     formState: { errors },
   } = useFormContext();
+  const step1Email = watch("email");
+  useEffect(() => {
+    if (step1Email) {
+      setValue("contactEmail", step1Email, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    }
+  }, [step1Email, setValue]);
 
   return (
     <div className="steps__section">
