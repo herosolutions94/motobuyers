@@ -19,36 +19,40 @@ export default async function handler(req, res) {
     if (!photoId || !storagePath) {
       return res.status(400).json({
         success: false,
-        error: "Missing data",
+        error: "Missing photoId or storagePath",
       });
     }
 
-    // delete from bucket
+    // ── 1. Delete from Supabase Storage bucket ──────────────────────────────
     const { error: storageErr } = await supabase.storage
       .from("intake-photos")
       .remove([storagePath]);
 
     if (storageErr) {
-      console.error(storageErr);
+      // Log but don't abort — the DB row should still be cleaned up
+      console.error("[delete-photo] Storage removal error:", storageErr);
     }
 
-    // soft delete row
+    // ── 2. Hard-delete the DB row (or soft-delete — pick one) ───────────────
+    // Using hard delete so storage and DB stay in sync.
+    // If you prefer a soft delete, swap the block below with:
+    //   await supabase.from("intake_photos").update({ status: "deleted" }).eq("id", photoId);
     const { error: dbErr } = await supabase
       .from("intake_photos")
-      .update({
-        status: "deleted",
-        // deleted_at: new Date().toISOString(),
-      })
+      .delete()
       .eq("id", photoId);
 
     if (dbErr) {
-      console.error(dbErr);
+      console.error("[delete-photo] DB delete error:", dbErr);
+      return res.status(500).json({
+        success: false,
+        error: dbErr.message,
+      });
     }
 
-    return res.status(200).json({
-      success: true,
-    });
+    return res.status(200).json({ success: true });
   } catch (err) {
+    console.error("[delete-photo] Unexpected error:", err);
     return res.status(500).json({
       success: false,
       error: err.message,

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Section from "./section";
 import Contain from "./contain";
@@ -6,6 +6,13 @@ import Heading from "./heading";
 import Paragraph from "./paragraph";
 import { cmsFileUrl } from "@/helpers/helpers";
 import Text from "./text";
+import {
+  getOrCreateSessionId,
+  setSubmissionId,
+  getSubmissionId,
+  saveFormState,
+  saveStepIndex,
+} from "@/lib/draftSession";
 
 // ─── Custom Select ────────────────────────────────────────────────────────────
 function CustomSelect({ value, onChange, options, placeholder }) {
@@ -135,31 +142,29 @@ async function decodeVin(vin) {
   if (!res.ok) throw new Error("Network error");
   const data = await res.json();
   const r = data.Results?.[0] ?? {};
-  return {
-    year: r.ModelYear || "",
-    make: r.Make || "", // return raw — matchMakeToOption handles casing
-    model: r.Model || "",
-  };
+  return { year: r.ModelYear || "", make: r.Make || "", model: r.Model || "" };
 }
 
-// Match raw API make string (e.g. "HARLEY-DAVIDSON") to the exact
-// option value in MAKE_OPTIONS using a case-insensitive comparison.
-// Returns the matched option string, or "other" if no match found.
 function matchMakeToOption(rawMake) {
   if (!rawMake) return "";
   const normalized = rawMake.trim().toLowerCase();
   const match = MAKE_OPTIONS.find((o) => {
     if (!o || o.separator) return false;
-    const v = String(o?.value ?? o);
-    return v.toLowerCase() === normalized;
+    return String(o?.value ?? o).toLowerCase() === normalized;
   });
   if (match) return String(match?.value ?? match);
-  return "other"; // unrecognized make → show "Enter Make" text input
+  return "other";
 }
 
 function isValidVin(vin) {
   return /^[A-HJ-NPR-Z0-9]{17}$/i.test(vin);
 }
+
+// ─── PAGE_MAP (mirrors saveDraft) ─────────────────────────────────────────────
+const PAGE_MAP = {
+  "bike-id": "entry",
+  "vehicle-details": "details",
+};
 
 // ─── VinHelpModal ─────────────────────────────────────────────────────────────
 function VinHelpModal({ onClose, content }) {
@@ -244,7 +249,6 @@ function VideoModal({ onClose, videoUrl }) {
         >
           ✕
         </button>
-
         <div className="video__wrapper">
           <video
             src={videoUrl}
@@ -258,7 +262,6 @@ function VideoModal({ onClose, videoUrl }) {
   );
 }
 
-// ─── UnsupportedYearBanner ────────────────────────────────────────────────────
 function UnsupportedYearBanner() {
   return (
     <div className="steps__unsupported-banner">
@@ -277,20 +280,81 @@ function UnsupportedYearBanner() {
 // ─── SESSION STORAGE KEY ──────────────────────────────────────────────────────
 export const HERO_PREFILL_KEY = "motobuyers_step1_prefill";
 
+// ─── Build Supabase row for bike-id ──────────────────────────────────────────
+function buildBikeIdRow(formState, sessionId) {
+  const isVin = formState.tab === "vin";
+  const isManual = formState.tab === "manual";
+
+  const activeYear = isVin ? formState.year : formState.manualYear;
+
+  const activeMake = isVin
+    ? formState.make
+    : formState.manualMake === "other"
+      ? formState.customMake
+      : formState.manualMake;
+
+  const activeModel = isVin ? formState.vinModel : formState.model;
+  const activeCMake = isVin ? null : formState.customMake || null;
+
+  const hasVinData = !!formState.vin;
+
+  return {
+    // next step is always vehicle-details
+    current_page: PAGE_MAP["vehicle-details"],
+    session_id: sessionId,
+    last_active_at: new Date().toISOString(),
+    status: "draft",
+    entry_path: formState.tab || "vin",
+    landing_url: typeof window !== "undefined" ? window.location.href : null,
+    referrer:
+      typeof document !== "undefined" ? document.referrer || null : null,
+    user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+
+    // Primary columns — reflect active tab
+    year: activeYear,
+    make: activeMake,
+    model: activeModel,
+    custom_make: activeCMake,
+
+    // VIN columns — preserved whenever any VIN data exists in form state
+    vin: hasVinData ? formState.vin || null : null,
+    vin_decoded: hasVinData ? !!formState.vehicleIdentified : false,
+    vin_input: hasVinData ? formState.vin || null : null,
+    submitted_vin: hasVinData ? formState.vin || null : null,
+    vin_year: hasVinData ? formState.year || null : null,
+    vin_make: hasVinData ? formState.make || null : null,
+    vin_model: hasVinData ? formState.vinModel || null : null,
+
+    // Manual columns — only when manual tab was active
+    manual_year: isManual ? formState.manualYear || null : null,
+    manual_make: isManual ? formState.manualMake || null : null,
+    manual_model: isManual ? formState.model || null : null,
+    manual_custom_make: isManual ? formState.customMake || null : null,
+
+    form_state: JSON.stringify({
+      tab: formState.tab,
+      vin: formState.vin,
+      year: formState.year,
+      make: formState.make,
+      model: formState.model,
+      vinModel: formState.vinModel,
+      customMake: formState.customMake,
+      manualYear: formState.manualYear,
+      manualMake: formState.manualMake,
+    }),
+  };
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function HeroSection({ content }) {
   const router = useRouter();
+
   const [showVideo, setShowVideo] = useState(false);
   const [activeTab, setActiveTab] = useState("vin");
   const [showVinHelp, setShowVinHelp] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [errors, setErrors] = useState({
-    year: "",
-    make: "",
-    model: "",
-    customMake: "",
-  });
-  // VIN path state
+  const [submitting, setSubmitting] = useState(false);
+
+  // VIN tab state
   const [vinValue, setVinValue] = useState("");
   const [vinDecoding, setVinDecoding] = useState(false);
   const [vinDecodeError, setVinDecodeError] = useState("");
@@ -303,18 +367,28 @@ export default function HeroSection({ content }) {
   });
   const lastDecodedVin = useRef("");
 
-  // Year & Make path state
-  const [year, setYear] = useState("");
-  const [make, setMake] = useState("");
+  // Manual tab state
+  const [manualYear, setManualYear] = useState("");
+  const [manualMake, setManualMake] = useState("");
   const [customMake, setCustomMake] = useState("");
   const [model, setModel] = useState("");
 
+  // Field errors
+  const [errors, setErrors] = useState({
+    year: "",
+    make: "",
+    model: "",
+    customMake: "",
+  });
+
   const vinValid = isValidVin(vinValue);
   const isUnsupportedYear =
-    year && (year === "before-2003" || parseInt(year, 10) < 2003);
+    manualYear &&
+    (manualYear === "before-2003" || parseInt(manualYear, 10) < 2003);
 
   // ── Auto-decode VIN ────────────────────────────────────────────────────────
   useEffect(() => {
+    if (activeTab !== "vin") return;
     if (!vinValid || vinValue === lastDecodedVin.current) return;
 
     lastDecodedVin.current = vinValue;
@@ -325,13 +399,11 @@ export default function HeroSection({ content }) {
 
     decodeVin(vinValue)
       .then(({ year, make, model }) => {
-        // Match raw API make (e.g. "HARLEY-DAVIDSON") to dropdown option
         const matchedMake = matchMakeToOption(make);
-        // For vehicleIdentified display, use the matched label or raw make
         const displayMake =
           matchedMake && matchedMake !== "other" ? matchedMake : make;
-        // vehicleIdentified = year + make only — model has its own field
         const identified = [year, displayMake].filter(Boolean).join(" ");
+
         if (!identified) {
           setVinDecodeError(
             "VIN not recognized. Try switching to Year and Make.",
@@ -339,21 +411,13 @@ export default function HeroSection({ content }) {
           setVinDecodeSuccess(false);
           return;
         }
+
         setVinDecoded({
           year,
           make: matchedMake,
           vinModel: model,
           vehicleIdentified: identified,
         });
-        // Pre-fill Year & Make tab fields
-        setYear(year);
-        setMake(matchedMake);
-        // If make didn't match any option, pre-fill the free-text field with raw value
-        if (matchedMake === "other") {
-          setCustomMake(make);
-        } else {
-          setCustomMake("");
-        }
         setVinDecodeError("");
         setVinDecodeSuccess(true);
       })
@@ -366,85 +430,174 @@ export default function HeroSection({ content }) {
       .finally(() => setVinDecoding(false));
   }, [vinValid, vinValue]);
 
-  // ── Handle GET YOUR OFFER ──────────────────────────────────────────────────
-  const handleSubmit = () => {
-    const newErrors = {
-      year: "",
-      make: "",
-      model: "",
-      customMake: "",
-    };
+  // ── Build form state object (matches RHF shape in steps.jsx) ──────────────
+  const buildFormStateObj = useCallback(() => {
+    if (activeTab === "vin") {
+      return {
+        tab: "vin",
 
+        vin: vinValue,
+        vehicleIdentified: vinDecoded.vehicleIdentified,
+
+        year: vinDecoded.year || "",
+        make: vinDecoded.make || "",
+        vinModel: vinDecoded.vinModel || "",
+
+        // manual MUST be empty
+        model: "",
+        customMake: "",
+        manualYear: "",
+        manualMake: "",
+      };
+    }
+
+    return {
+      tab: "manual",
+
+      vin: "", // IMPORTANT: clear VIN context
+      vehicleIdentified: "",
+
+      year: manualYear || "",
+      make: manualMake === "other" ? customMake : manualMake,
+      model: model || "",
+
+      customMake: manualMake === "other" ? customMake : "",
+
+      manualYear: manualYear || "",
+      manualMake: manualMake || "",
+      vinModel: "",
+    };
+  }, [
+    activeTab,
+    vinValue,
+    vinDecoded,
+    model,
+    customMake,
+    manualYear,
+    manualMake,
+  ]);
+
+  // ── Core submit logic (shared between button click and Enter key) ──────────
+  const doSubmit = useCallback(async () => {
+    if (submitting) return;
+
+    const newErrors = { year: "", make: "", model: "", customMake: "" };
+
+    // Validate
     if (activeTab === "vin") {
       if (!vinValid) {
         setVinDecodeError("Please enter a valid 17-character VIN.");
         return;
       }
-
       if (vinDecoding) {
         setVinDecodeError("Please wait — decoding your VIN.");
         return;
       }
-
       if (!vinDecodeSuccess) {
         setVinDecodeError(
           "VIN not recognized. Try switching to Year and Make.",
         );
         return;
       }
-
-      sessionStorage.setItem(
-        HERO_PREFILL_KEY,
-        JSON.stringify({
-          tab: "vin",
-          vin: vinValue,
-          vehicleIdentified: vinDecoded.vehicleIdentified,
-          year: vinDecoded.year,
-          make: vinDecoded.make,
-          vinModel: vinDecoded.vinModel,
-        }),
-      );
     } else {
-      if (!year) {
-        newErrors.year = "Please select a year.";
-      }
-
-      if (isUnsupportedYear) {
+      if (!manualYear) newErrors.year = "Please select a year.";
+      if (isUnsupportedYear)
         newErrors.year = "We only accept motorcycles from 2003 or newer.";
-      }
-
-      if (!make) {
-        newErrors.make = "Please select a make.";
-      }
-
-      if (make === "other" && !customMake.trim()) {
+      if (!manualMake) newErrors.make = "Please select a make.";
+      if (manualMake === "other" && !customMake.trim())
         newErrors.customMake = "Please enter the make.";
-      }
+      if (!model.trim()) newErrors.model = "Please enter the model.";
 
-      if (!model.trim()) {
-        newErrors.model = "Please enter the model.";
-      }
-
-      // ❗ agar koi error hai to stop
       if (Object.values(newErrors).some((e) => e)) {
         setErrors(newErrors);
         return;
       }
+    }
 
-      sessionStorage.setItem(
-        HERO_PREFILL_KEY,
-        JSON.stringify({
-          tab: "manual",
-          year,
-          make,
-          customMake: make === "other" ? customMake.trim() : "",
-          model: model.trim(),
-        }),
-      );
+    setSubmitting(true);
+
+    try {
+      const formState = buildFormStateObj();
+      if (formState.tab === "vin") {
+        formState.manualYear = "";
+        formState.manualMake = "";
+        formState.model = "";
+      } else {
+        formState.vin = "";
+        formState.vinModel = "";
+      }
+      const sessionId = getOrCreateSessionId();
+      const existingId = getSubmissionId();
+      const isCreate = !existingId;
+      const method = isCreate ? "POST" : "PATCH";
+      const url = isCreate
+        ? "/api/submit-appraisal"
+        : `/api/submit-appraisal?id=${existingId}`;
+
+      const row = buildBikeIdRow(formState, sessionId);
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(row),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        console.error("[HeroSection] API error:", result.error);
+        // Don't block navigation for a draft-save failure
+      } else if (isCreate && result.data?.id) {
+        setSubmissionId(result.data.id);
+      }
+
+      // Persist to localStorage for refresh restore on /steps
+      const stepIndex = 1; // "vehicle-details" is index 1 in the default sequence
+      saveFormState({ ...formState, photos: [] });
+      saveStepIndex(stepIndex);
+
+      // Also write sessionStorage for the steps.jsx mount handler
+      sessionStorage.setItem(HERO_PREFILL_KEY, JSON.stringify(formState));
+    } catch (err) {
+      console.error("[HeroSection] Submit error:", err);
+      // Fall through — still navigate
+      const formState = buildFormStateObj();
+      sessionStorage.setItem(HERO_PREFILL_KEY, JSON.stringify(formState));
+    } finally {
+      setSubmitting(false);
     }
 
     router.push("/steps");
-  };
+  }, [
+    submitting,
+    activeTab,
+    vinValid,
+    vinDecoding,
+    vinDecodeSuccess,
+    manualYear,
+    manualMake,
+    customMake,
+    model,
+    isUnsupportedYear,
+    buildFormStateObj,
+    router,
+  ]);
+
+  // ── Enter key: submit the hero form ───────────────────────────────────────
+  // Skip if focused element is a button (let it handle its own Enter/Space)
+  // or a textarea.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key !== "Enter") return;
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === "textarea" || tag === "button") return;
+      e.preventDefault();
+      doSubmit();
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [doSubmit]);
 
   return (
     <>
@@ -464,7 +617,6 @@ export default function HeroSection({ content }) {
           <div className="hero__inner">
             <div className="hero__left">
               <div className="hero__bikes" aria-hidden="true">
-                {/* <img src="/images/bikes.png" alt="Motorcycles" /> */}
                 <img src={cmsFileUrl(content?.image2)} alt="Motorcycles" />
               </div>
               <div
@@ -482,20 +634,6 @@ export default function HeroSection({ content }) {
                   />
                 </div>
               </div>
-              {/* <div
-                className="hero__play"
-                aria-label="Watch video"
-                role="button"
-                tabIndex="0"
-              >
-                <div className="hero__play-inner">
-                  <img
-                    src="/images/play-button.svg"
-                    alt="Play"
-                    className="hero__play-icon"
-                  />
-                </div>
-              </div> */}
             </div>
 
             <div className="hero__right">
@@ -512,14 +650,25 @@ export default function HeroSection({ content }) {
                     paddingBottom: 0,
                   }}
                 >
-                  {/* Tabs */}
+                  {/* ── Tabs ── */}
                   <div className="steps__tabs">
                     <button
                       className={`steps__tab${activeTab === "vin" ? " steps__tab--active" : ""}`}
                       type="button"
                       onClick={() => {
                         setActiveTab("vin");
-                        setFormError("");
+
+                        // isolate manual state (IMPORTANT)
+                        setManualYear("");
+                        setManualMake("");
+                        setCustomMake("");
+                        setModel("");
+                        setErrors({
+                          year: "",
+                          make: "",
+                          model: "",
+                          customMake: "",
+                        });
                       }}
                     >
                       VIN
@@ -529,7 +678,18 @@ export default function HeroSection({ content }) {
                       type="button"
                       onClick={() => {
                         setActiveTab("manual");
-                        setFormError("");
+
+                        // isolate VIN state (IMPORTANT)
+                        setVinValue("");
+                        setVinDecoded({
+                          year: "",
+                          make: "",
+                          vinModel: "",
+                          vehicleIdentified: "",
+                        });
+
+                        setVinDecodeError("");
+                        setVinDecodeSuccess(false);
                       }}
                     >
                       Year and Make
@@ -554,7 +714,6 @@ export default function HeroSection({ content }) {
                             setVinValue(v);
                             setVinDecodeError("");
                             setVinDecodeSuccess(false);
-                            setFormError("");
                             lastDecodedVin.current = "";
                           }}
                         />
@@ -598,6 +757,36 @@ export default function HeroSection({ content }) {
                                 strokeWidth="2.2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
+                              />
+                            </svg>
+                          </span>
+                        )}
+                        {vinValid && !vinDecoding && vinDecodeError && (
+                          <span className="steps__input-valid-icon">
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              width="20"
+                              height="20"
+                            >
+                              <circle cx="12" cy="12" r="10" fill="#dc2626" />
+                              <line
+                                x1="8"
+                                y1="8"
+                                x2="16"
+                                y2="16"
+                                stroke="#fff"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                              />
+                              <line
+                                x1="16"
+                                y1="8"
+                                x2="8"
+                                y2="16"
+                                stroke="#fff"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
                               />
                             </svg>
                           </span>
@@ -691,10 +880,10 @@ export default function HeroSection({ content }) {
                     <div className="steps__tab-content">
                       <label className="steps__field-label !mb-[0]">Year</label>
                       <CustomSelect
-                        value={year}
+                        value={manualYear}
                         onChange={(v) => {
-                          setYear(v);
-                          setErrors((prev) => ({ ...prev, year: "" }));
+                          setManualYear(v);
+                          setErrors((p) => ({ ...p, year: "" }));
                         }}
                         options={YEAR_OPTIONS}
                         placeholder="Choose year"
@@ -713,10 +902,11 @@ export default function HeroSection({ content }) {
                             Make
                           </label>
                           <CustomSelect
-                            value={make}
+                            value={manualMake}
                             onChange={(v) => {
-                              setMake(v);
-                              setErrors((prev) => ({ ...prev, make: "" }));
+                              setManualMake(v);
+                              setErrors((p) => ({ ...p, make: "" }));
+                              if (v !== "other") setCustomMake("");
                             }}
                             options={MAKE_OPTIONS}
                             placeholder="Choose make"
@@ -724,8 +914,8 @@ export default function HeroSection({ content }) {
                           {errors.make && (
                             <p className="steps__field-error">{errors.make}</p>
                           )}
-                          {/* Enter Make — shown when Other is selected */}
-                          {make === "other" && (
+
+                          {manualMake === "other" && (
                             <>
                               <label
                                 className="steps__field-label !mb-[0]"
@@ -741,14 +931,10 @@ export default function HeroSection({ content }) {
                                 autoFocus
                                 onChange={(e) => {
                                   setCustomMake(e.target.value);
-                                  setErrors((prev) => ({
-                                    ...prev,
-                                    customMake: "",
-                                  }));
+                                  setErrors((p) => ({ ...p, customMake: "" }));
                                 }}
                               />
-
-                              {make === "other" && errors.customMake && (
+                              {errors.customMake && (
                                 <p className="steps__field-error">
                                   {errors.customMake}
                                 </p>
@@ -769,10 +955,9 @@ export default function HeroSection({ content }) {
                             value={model}
                             onChange={(e) => {
                               setModel(e.target.value);
-                              setErrors((prev) => ({ ...prev, model: "" }));
+                              setErrors((p) => ({ ...p, model: "" }));
                             }}
                           />
-
                           {errors.model && (
                             <p className="steps__field-error">{errors.model}</p>
                           )}
@@ -781,17 +966,14 @@ export default function HeroSection({ content }) {
                     </div>
                   )}
 
-                  {/* {formError && (
-                    <p className="steps__field-error" style={{ marginTop: "0.6rem" }}>{formError}</p>
-                  )} */}
-
                   <button
                     className="form__submit-btn"
                     type="button"
                     style={{ marginTop: "20px" }}
-                    onClick={handleSubmit}
+                    onClick={doSubmit}
+                    disabled={submitting}
                   >
-                    {content?.form_btn_heading}
+                    {submitting ? "Please wait…" : content?.form_btn_heading}
                   </button>
                 </div>
               </div>
