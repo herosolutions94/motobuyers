@@ -3,9 +3,10 @@
 ═══════════════════════════════════════════════════ */
 #hero {
   position: relative;
-  overflow: hidden;
+  overflow: unset;
   background: #fff;
   padding: 10rem 0;
+  z-index: 2;
   .hero__bg {
     position: absolute;
     inset: 0 0 16rem 0;
