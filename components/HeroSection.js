@@ -146,16 +146,16 @@ async function decodeVin(vin) {
   return { year: r.ModelYear || "", make: r.Make || "", model: r.Model || "" };
 }
 
-function matchMakeToOption(rawMake) {
-  if (!rawMake) return "";
-  const normalized = rawMake.trim().toLowerCase();
-  const match = MAKE_OPTIONS.find((o) => {
-    if (!o || o.separator) return false;
-    return String(o?.value ?? o).toLowerCase() === normalized;
-  });
-  if (match) return String(match?.value ?? match);
-  return "other";
-}
+// function matchMakeToOption(rawMake) {
+//   if (!rawMake) return "";
+//   const normalized = rawMake.trim().toLowerCase();
+//   const match = MAKE_OPTIONS.find((o) => {
+//     if (!o || o.separator) return false;
+//     return String(o?.value ?? o).toLowerCase() === normalized;
+//   });
+//   if (match) return String(match?.value ?? match);
+//   return "other";
+// }
 
 function isValidVin(vin) {
   return /^[A-HJ-NPR-Z0-9]{17}$/i.test(vin);
@@ -446,7 +446,9 @@ export default function HeroSection({ content }) {
 
     decodeVin(vinValue)
       .then(({ year, make, model }) => {
-        const matchedMake = matchMakeToOption(make);
+        // const matchedMake = matchMakeToOption(make);
+        const matchedMake = make;
+
         const displayMake =
           matchedMake && matchedMake !== "other" ? matchedMake : make;
         const identified = [year, displayMake].filter(Boolean).join(" ");
