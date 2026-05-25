@@ -699,7 +699,7 @@ export default function Step1({ content }) {
                       })}
                       type="text"
                       className={`steps__input${errors.customMake ? " steps__input--error" : ""}`}
-                      placeholder="e.g. Aprilia, MV Agusta, Benelli…"
+                      placeholder="Type the brand or make name"
                       autoFocus
                     />
                     {errors.customMake && (
@@ -726,6 +726,7 @@ export default function Step1({ content }) {
                   type="text"
                   className={`steps__input${errors.manualModel ? " steps__input--error" : ""}`}
                   placeholder="e.g. CBR600RR, Ninja 650, MT-07…"
+
                 />
                 {errors.manualModel && (
                   <p className="steps__field-error">
