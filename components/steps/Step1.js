@@ -138,16 +138,16 @@ async function decodeVin(vin) {
   return { year: r.ModelYear || "", make: r.Make || "", model: r.Model || "" };
 }
 
-function matchMakeToOption(rawMake) {
-  if (!rawMake) return "";
-  const normalized = rawMake.trim().toLowerCase();
-  const match = MAKE_OPTIONS.find((o) => {
-    if (!o || o.separator) return false;
-    return String(o?.value ?? o).toLowerCase() === normalized;
-  });
-  if (match) return String(match?.value ?? match);
-  return "other";
-}
+// function matchMakeToOption(rawMake) {
+//   if (!rawMake) return "";
+//   const normalized = rawMake.trim().toLowerCase();
+//   const match = MAKE_OPTIONS.find((o) => {
+//     if (!o || o.separator) return false;
+//     return String(o?.value ?? o).toLowerCase() === normalized;
+//   });
+//   if (match) return String(match?.value ?? match);
+//   return "other";
+// }
 
 function isValidVin(vin) {
   return /^[A-HJ-NPR-Z0-9]{17}$/i.test(vin);
@@ -321,7 +321,6 @@ export default function Step1({ content }) {
 
   const activeTab = watch("tab") || "vin";
   const vinValue = watch("vin") || "";
-  // Manual tab has its own isolated year/make — never touched by VIN decode
   const manualYear = watch("manualYear") || "";
   const vinValid = isValidVin(vinValue);
 
@@ -339,17 +338,35 @@ export default function Step1({ content }) {
     if (vinValue && !vinValid) setShowVinError(true);
   };
 
-  // Restore decode-success state when user navigates back to this step
+  // ── Restore decode-success state on mount (covers back-navigation AND page refresh) ──
+  // FIX: check both vehicleIdentified (from direct RHF state) and the current
+  //      vin value — this fires after the steps.jsx mount effect has already
+  //      hydrated the form from sessionStorage / localStorage.
   useEffect(() => {
     const existingIdentified = watch("vehicleIdentified");
-    if (vinValid && existingIdentified && !vinDecodeSuccess) {
+    const currentVin = watch("vin") || "";
+
+    if (isValidVin(currentVin) && existingIdentified && !vinDecodeSuccess) {
       setVinDecodeSuccess(true);
-      lastDecodedVin.current = vinValue;
+      lastDecodedVin.current = currentVin;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-decode when user finishes typing a valid VIN
+  // ── Also re-run restore check whenever vehicleIdentified changes (prefill path) ──
+  // This covers the case where steps.jsx sets the value AFTER Step1 mounts.
+  const vehicleIdentified = watch("vehicleIdentified");
+  useEffect(() => {
+    if (!vehicleIdentified) return;
+    const currentVin = watch("vin") || "";
+    if (isValidVin(currentVin) && !vinDecodeSuccess) {
+      setVinDecodeSuccess(true);
+      lastDecodedVin.current = currentVin;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicleIdentified]);
+
+  // ── Auto-decode when user finishes typing a valid VIN ──────────────────────
   useEffect(() => {
     if (!userHasTyped.current) return;
     if (!vinValid || vinValue === lastDecodedVin.current) return;
@@ -369,11 +386,13 @@ export default function Step1({ content }) {
     setValue("vinYear", "");
     setValue("vinMake", "");
     setValue("vinModel", "");
-    // Never touch manualYear / manualMake — they belong to the manual tab only
+    // Never touch manualYear / manualMake / manualModel — they belong to manual tab only
 
     decodeVin(vinValue)
       .then(({ year, make, model }) => {
-        const matchedMake = matchMakeToOption(make);
+        const matchedMake = make;
+        console.log('matchedMake',matchedMake);
+        
         const displayMake =
           matchedMake && matchedMake !== "other" ? matchedMake : make;
         const identified = [year, displayMake].filter(Boolean).join(" ");
@@ -386,6 +405,12 @@ export default function Step1({ content }) {
           return;
         }
 
+        console.log("vehicleIdentified", identified);
+        console.log("vinYear", year);
+        console.log("vinMake", matchedMake);
+        console.log("vinModel", model);
+
+        
         setValue("vehicleIdentified", identified);
 
         // VIN isolated fields
@@ -609,7 +634,7 @@ export default function Step1({ content }) {
         )}
 
         {/* ── Year & Make Tab ── */}
-        {/* Uses manualYear / manualMake — completely isolated from VIN decode */}
+        {/* Uses manualYear / manualMake / manualModel — completely isolated from VIN decode */}
         {activeTab === "manual" && (
           <div className="steps__tab-content">
             <label className="steps__field-label !mb-[0]">Year</label>
@@ -627,7 +652,6 @@ export default function Step1({ content }) {
                   value={field.value}
                   onChange={(v) => {
                     field.onChange(v);
-
                     setValue("year", v);
                   }}
                   options={YEAR_OPTIONS}
@@ -659,12 +683,10 @@ export default function Step1({ content }) {
                       value={field.value}
                       onChange={(v) => {
                         field.onChange(v);
-
                         clearErrors("customMake");
 
                         const finalMake =
                           v === "other" ? watch("customMake") : v;
-
                         setValue("make", finalMake);
 
                         if (v !== "other") {
@@ -716,6 +738,12 @@ export default function Step1({ content }) {
                 >
                   Model
                 </label>
+                {/*
+                  FIX: register as "manualModel" (not "model") so it is
+                  isolated from the VIN tab's active "model" field.
+                  The onChange handler also mirrors the value into "model"
+                  so the active/primary field stays in sync.
+                */}
                 <input
                   {...register("manualModel", {
                     required: "Please enter the model",
@@ -726,7 +754,6 @@ export default function Step1({ content }) {
                   type="text"
                   className={`steps__input${errors.manualModel ? " steps__input--error" : ""}`}
                   placeholder="e.g. CBR600RR, Ninja 650, MT-07…"
-
                 />
                 {errors.manualModel && (
                   <p className="steps__field-error">

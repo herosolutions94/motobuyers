@@ -70,11 +70,7 @@ export default async function handler(req, res) {
         console.error(uploadErr);
         continue;
       }
-
-      // public preview
-      // const {
-      //   data: { publicUrl },
-      // } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+      
       const { data: signedData } = await supabase.storage
         .from(BUCKET)
         .createSignedUrl(storagePath, 60 * 60);

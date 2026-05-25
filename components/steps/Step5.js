@@ -132,15 +132,20 @@ export default function Step5({ content }) {
                     <input
                       {...register("payoffAmount")}
                       type="text"
-                      inputMode="numeric"
+                      inputMode="decimal"
                       className="steps__amount-input"
                       placeholder="Enter amount"
                       onChange={(e) => {
-                        const onlyNumbers = e.target.value.replace(
-                          /[^0-9]/g,
-                          "",
-                        );
-                        setValue("payoffAmount", onlyNumbers, {
+                        let value = e.target.value;
+                        value = value.replace(/[^0-9.]/g, "");
+                        const parts = value.split(".");
+                        if (parts.length > 2) {
+                          value = parts[0] + "." + parts.slice(1).join("");
+                        }
+                        if (parts[1]) {
+                          value = parts[0] + "." + parts[1].slice(0, 2);
+                        }
+                        setValue("payoffAmount", value, {
                           shouldValidate: true,
                         });
                       }}
@@ -182,12 +187,20 @@ export default function Step5({ content }) {
                 <input
                   {...register("askingPrice")}
                   type="text"
-                  inputMode="numeric"
+                  inputMode="decimal"
                   className="steps__amount-input"
                   placeholder="Enter amount"
                   onChange={(e) => {
-                    const onlyNumbers = e.target.value.replace(/[^0-9]/g, "");
-                    setValue("askingPrice", onlyNumbers, {
+                    let value = e.target.value;
+                    value = value.replace(/[^0-9.]/g, "");
+                    const parts = value.split(".");
+                    if (parts.length > 2) {
+                      value = parts[0] + "." + parts.slice(1).join("");
+                    }
+                    if (parts[1]) {
+                      value = parts[0] + "." + parts[1].slice(0, 2);
+                    }
+                    setValue("askingPrice", value, {
                       shouldValidate: true,
                     });
                   }}

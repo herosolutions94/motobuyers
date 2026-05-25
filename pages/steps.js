@@ -91,7 +91,7 @@ const STEP_TITLE_MAP = {
   "mech-rating": "Mechanical Condition",
   "mech-issues": "Mechanical Issue",
   "service-maint": "Service and Maintenance Items",
-  "tire-mileage": "Tire Millage",
+  "tire-mileage": "Tire Mileage",
   "title-financial": "Title and Financial Info",
   photos: "Photos",
   "contact-submit": "Contact Info",
@@ -150,7 +150,7 @@ const DEFAULT_VALUES = {
   // Manual isolated fields
   manualYear: "",
   manualMake: "",
-  manualModel: "",
+  manualModel: "",   // FIX: was missing from DEFAULT_VALUES
 
   customMake: "",
   // Step 2
@@ -222,39 +222,21 @@ export default function StepsPage({ result }) {
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
-
     const doRestore = async () => {
-      // ── Priority 1: hero section prefill ──────────────────────────────────
+      let heroPrefill = null;
       try {
         const raw = sessionStorage.getItem(HERO_PREFILL_KEY);
         if (raw) {
           sessionStorage.removeItem(HERO_PREFILL_KEY);
-          const prefill = JSON.parse(raw);
-          Object.entries(prefill).forEach(([key, value]) => {
-            methods.setValue(key, value, { shouldValidate: false });
-          });
-          const freshSeq = buildSequence({
-            cosmetic: null,
-            mechanical: null,
-            mileage: "",
-          });
-          const step2Idx = freshSeq.indexOf("vehicle-details");
-          if (step2Idx > 0) {
-            setCurrentIndex(step2Idx);
-            saveStepIndex(step2Idx);
-          }
-          return;
+          heroPrefill = JSON.parse(raw);
         }
       } catch {
         /* ignore */
       }
 
-      // ── Priority 2: localStorage draft restore ─────────────────────────────
       const submissionId = getSubmissionId();
-      if (!submissionId) return;
-
-      const savedState = loadFormState();
-      const savedIndex = loadStepIndex();
+      const savedState = submissionId ? loadFormState() : null;
+      const savedIndex = submissionId ? loadStepIndex() : null;
 
       if (savedState) {
         Object.entries(savedState).forEach(([key, value]) => {
@@ -264,8 +246,40 @@ export default function StepsPage({ result }) {
             });
           }
         });
+
+        if (savedState.tab === "manual") {
+          const resolvedModel =
+            savedState.manualModel || savedState.model || "";
+          methods.setValue("manualModel", resolvedModel, { shouldValidate: false });
+          methods.setValue("model", resolvedModel, { shouldValidate: false });
+        }
       }
 
+     
+      if (heroPrefill) {
+        Object.entries(heroPrefill).forEach(([key, value]) => {
+          methods.setValue(key, value, { shouldValidate: false });
+        });
+
+        if (heroPrefill.tab === "manual" && heroPrefill.manualModel) {
+          methods.setValue("model", heroPrefill.manualModel, { shouldValidate: false });
+        }
+
+        // Jump to vehicle-details (Step 2)
+        const freshSeq = buildSequence({
+          cosmetic: null,
+          mechanical: null,
+          mileage: savedState?.mileage || "",
+        });
+        const step2Idx = freshSeq.indexOf("vehicle-details");
+        if (step2Idx > 0) {
+          setCurrentIndex(step2Idx);
+          saveStepIndex(step2Idx);
+        }
+        return;
+      }
+
+      // ── No hero prefill — restore the saved step index ────────────────────
       if (savedIndex !== null && savedIndex > 0) {
         setCurrentIndex(savedIndex);
       }
@@ -471,18 +485,12 @@ export default function StepsPage({ result }) {
   }, [isSubmitStep, handleSubmit, goNext]);
 
   // ─── Enter key: advance step ──────────────────────────────────────────────
-  // Fires handleContinue when Enter is pressed, UNLESS:
-  //   • the focused element is a <textarea> (allow newlines)
-  //   • the focused element is a <button> (let the button handle its own click)
-  //   • we are on the thank-you step (no continue button)
-  //   • we are currently submitting
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key !== "Enter") return;
       if (isLastStep || submitting) return;
 
       const tag = document.activeElement?.tagName?.toLowerCase();
-      // Let textarea newlines and button Space/Enter work naturally
       if (tag === "textarea" || tag === "button") return;
 
       e.preventDefault();
@@ -542,6 +550,7 @@ export default function StepsPage({ result }) {
       if (!yr || yr === "before-2003" || parseInt(yr, 10) < 2003) return false;
       if (!v.manualMake) return false;
       if (v.manualMake === "other" && !v.customMake) return false;
+      // FIX: check manualModel (not model) for the manual tab
       return !!v.manualModel;
     }
     if (currentStepId === "vehicle-details")

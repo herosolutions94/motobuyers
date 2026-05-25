@@ -23,20 +23,15 @@ export default async function handler(req, res) {
       });
     }
 
-    // ── 1. Delete from Supabase Storage bucket ──────────────────────────────
+    // ── 1. Delete from Supabase Storage bucket
     const { error: storageErr } = await supabase.storage
       .from("intake-photos")
       .remove([storagePath]);
 
     if (storageErr) {
-      // Log but don't abort — the DB row should still be cleaned up
       console.error("[delete-photo] Storage removal error:", storageErr);
     }
 
-    // ── 2. Hard-delete the DB row (or soft-delete — pick one) ───────────────
-    // Using hard delete so storage and DB stay in sync.
-    // If you prefer a soft delete, swap the block below with:
-    //   await supabase.from("intake_photos").update({ status: "deleted" }).eq("id", photoId);
     const { error: dbErr } = await supabase
       .from("intake_photos")
       .delete()

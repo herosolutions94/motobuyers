@@ -12,6 +12,7 @@ import {
   getSubmissionId,
   saveFormState,
   saveStepIndex,
+  loadFormState,
 } from "@/lib/draftSession";
 
 // ─── Custom Select ────────────────────────────────────────────────────────────
@@ -285,21 +286,20 @@ function buildBikeIdRow(formState, sessionId) {
   const isVin = formState.tab === "vin";
   const isManual = formState.tab === "manual";
 
-  const activeYear = isVin ? formState.year : formState.manualYear;
+  const activeYear = isVin ? formState.vinYear : formState.manualYear;
 
   const activeMake = isVin
-    ? formState.make
+    ? formState.vinMake
     : formState.manualMake === "other"
       ? formState.customMake
       : formState.manualMake;
 
-  const activeModel = isVin ? formState.vinModel : formState.model;
+  const activeModel = isVin ? formState.vinModel : formState.manualModel;
   const activeCMake = isVin ? null : formState.customMake || null;
 
   const hasVinData = !!formState.vin;
 
   return {
-    // next step is always vehicle-details
     current_page: PAGE_MAP["vehicle-details"],
     session_id: sessionId,
     last_active_at: new Date().toISOString(),
@@ -321,26 +321,30 @@ function buildBikeIdRow(formState, sessionId) {
     vin_decoded: hasVinData ? !!formState.vehicleIdentified : false,
     vin_input: hasVinData ? formState.vin || null : null,
     submitted_vin: hasVinData ? formState.vin || null : null,
-    vin_year: hasVinData ? formState.year || null : null,
-    vin_make: hasVinData ? formState.make || null : null,
+    vin_year: hasVinData ? formState.vinYear || null : null,
+    vin_make: hasVinData ? formState.vinMake || null : null,
     vin_model: hasVinData ? formState.vinModel || null : null,
 
-    // Manual columns — only when manual tab was active
-    manual_year: isManual ? formState.manualYear || null : null,
-    manual_make: isManual ? formState.manualMake || null : null,
-    manual_model: isManual ? formState.model || null : null,
-    manual_custom_make: isManual ? formState.customMake || null : null,
+    // Manual columns — always preserve if present
+    manual_year: formState.manualYear || null,
+    manual_make: formState.manualMake || null,
+    manual_model: formState.manualModel || null,
+    manual_custom_make: formState.customMake || null,
 
     form_state: JSON.stringify({
       tab: formState.tab,
       vin: formState.vin,
+      vehicleIdentified: formState.vehicleIdentified,
       year: formState.year,
       make: formState.make,
       model: formState.model,
+      vinYear: formState.vinYear,
+      vinMake: formState.vinMake,
       vinModel: formState.vinModel,
       customMake: formState.customMake,
       manualYear: formState.manualYear,
       manualMake: formState.manualMake,
+      manualModel: formState.manualModel,
     }),
   };
 }
@@ -360,8 +364,8 @@ export default function HeroSection({ content }) {
   const [vinDecodeError, setVinDecodeError] = useState("");
   const [vinDecodeSuccess, setVinDecodeSuccess] = useState(false);
   const [vinDecoded, setVinDecoded] = useState({
-    year: "",
-    make: "",
+    vinYear: "",
+    vinMake: "",
     vinModel: "",
     vehicleIdentified: "",
   });
@@ -371,7 +375,8 @@ export default function HeroSection({ content }) {
   const [manualYear, setManualYear] = useState("");
   const [manualMake, setManualMake] = useState("");
   const [customMake, setCustomMake] = useState("");
-  const [model, setModel] = useState("");
+  // FIX: renamed from `model` to `manualModel` to match the key used in Step1/saveDraft
+  const [manualModel, setManualModel] = useState("");
 
   // Field errors
   const [errors, setErrors] = useState({
@@ -386,16 +391,58 @@ export default function HeroSection({ content }) {
     manualYear &&
     (manualYear === "before-2003" || parseInt(manualYear, 10) < 2003);
 
+  const restoreFormState = useCallback(() => {
+    try {
+      const saved = loadFormState();
+      if (!saved) return;
+
+      setActiveTab(saved.tab || "vin");
+
+      // VIN fields
+      setVinValue(saved.vin || "");
+      setVinDecoded({
+        vinYear: saved.vinYear || "",
+        vinMake: saved.vinMake || "",
+        // FIX: check vinModel first, then model as fallback for legacy saves
+        vinModel: saved.vinModel || saved.model || "",
+        vehicleIdentified: saved.vehicleIdentified || "",
+      });
+
+      // Manual fields — FIX: always restore from manualModel (never fall back to model)
+      setManualYear(saved.manualYear || "");
+      setManualMake(saved.manualMake || "");
+      setCustomMake(saved.customMake || "");
+      setManualModel(saved.manualModel || "");
+
+      // Restore VIN decode success state so the "Vehicle identified" banner reappears
+      if (saved.vehicleIdentified) {
+        setVinDecodeSuccess(true);
+        lastDecodedVin.current = saved.vin || "";
+      }
+    } catch (err) {
+      console.error("Restore failed", err);
+    }
+  }, []);
+
   // ── Auto-decode VIN ────────────────────────────────────────────────────────
   useEffect(() => {
     if (activeTab !== "vin") return;
-    if (!vinValid || vinValue === lastDecodedVin.current) return;
+
+    if (
+      vinValid &&
+      vinDecoded.vehicleIdentified &&
+      vinValue === lastDecodedVin.current
+    ) {
+      return;
+    }
+
+    if (!vinValid) return;
 
     lastDecodedVin.current = vinValue;
     setVinDecoding(true);
     setVinDecodeError("");
     setVinDecodeSuccess(false);
-    setVinDecoded({ year: "", make: "", vinModel: "", vehicleIdentified: "" });
+    setVinDecoded({ vinYear: "", vinMake: "", vinModel: "", vehicleIdentified: "" });
 
     decodeVin(vinValue)
       .then(({ year, make, model }) => {
@@ -413,8 +460,8 @@ export default function HeroSection({ content }) {
         }
 
         setVinDecoded({
-          year,
-          make: matchedMake,
+          vinYear: year,
+          vinMake: matchedMake,
           vinModel: model,
           vehicleIdentified: identified,
         });
@@ -431,53 +478,55 @@ export default function HeroSection({ content }) {
   }, [vinValid, vinValue]);
 
   // ── Build form state object (matches RHF shape in steps.jsx) ──────────────
+  // FIX: NEVER clear the other tab's data — always preserve both tabs fully.
   const buildFormStateObj = useCallback(() => {
+    const base = {
+      // Always carry both tabs' data so nothing is lost on save/restore
+      vin: vinValue,
+      vehicleIdentified: vinDecoded.vehicleIdentified,
+
+      // VIN isolated fields
+      vinYear: vinDecoded.vinYear || "",
+      vinMake: vinDecoded.vinMake || "",
+      vinModel: vinDecoded.vinModel || "",
+
+      // Manual isolated fields — always preserved
+      manualYear: manualYear || "",
+      manualMake: manualMake || "",
+      manualModel: manualModel || "",
+      customMake: customMake || "",
+    };
+
     if (activeTab === "vin") {
       return {
+        ...base,
         tab: "vin",
-
-        vin: vinValue,
-        vehicleIdentified: vinDecoded.vehicleIdentified,
-
-        year: vinDecoded.year || "",
-        make: vinDecoded.make || "",
-        vinModel: vinDecoded.vinModel || "",
-
-        // manual MUST be empty
-        model: "",
-        customMake: "",
-        manualYear: "",
-        manualMake: "",
+        // Active primary fields reflect VIN decode
+        year: vinDecoded.vinYear || "",
+        make: vinDecoded.vinMake || "",
+        model: vinDecoded.vinModel || "",
       };
     }
 
     return {
+      ...base,
       tab: "manual",
-
-      vin: "", // IMPORTANT: clear VIN context
-      vehicleIdentified: "",
-
+      // Active primary fields reflect manual inputs
       year: manualYear || "",
       make: manualMake === "other" ? customMake : manualMake,
-      model: model || "",
-
-      customMake: manualMake === "other" ? customMake : "",
-
-      manualYear: manualYear || "",
-      manualMake: manualMake || "",
-      vinModel: "",
+      model: manualModel || "",
     };
   }, [
     activeTab,
     vinValue,
     vinDecoded,
-    model,
+    manualModel,
     customMake,
     manualYear,
     manualMake,
   ]);
 
-  // ── Core submit logic (shared between button click and Enter key) ──────────
+  // ── Core submit logic ──────────────────────────────────────────────────────
   const doSubmit = useCallback(async () => {
     if (submitting) return;
 
@@ -506,7 +555,7 @@ export default function HeroSection({ content }) {
       if (!manualMake) newErrors.make = "Please select a make.";
       if (manualMake === "other" && !customMake.trim())
         newErrors.customMake = "Please enter the make.";
-      if (!model.trim()) newErrors.model = "Please enter the model.";
+      if (!manualModel.trim()) newErrors.model = "Please enter the model.";
 
       if (Object.values(newErrors).some((e) => e)) {
         setErrors(newErrors);
@@ -517,15 +566,9 @@ export default function HeroSection({ content }) {
     setSubmitting(true);
 
     try {
+      // FIX: build form state WITHOUT clearing the other tab's fields
       const formState = buildFormStateObj();
-      if (formState.tab === "vin") {
-        formState.manualYear = "";
-        formState.manualMake = "";
-        formState.model = "";
-      } else {
-        formState.vin = "";
-        formState.vinModel = "";
-      }
+
       const sessionId = getOrCreateSessionId();
       const existingId = getSubmissionId();
       const isCreate = !existingId;
@@ -546,14 +589,15 @@ export default function HeroSection({ content }) {
 
       if (!result.success) {
         console.error("[HeroSection] API error:", result.error);
-        // Don't block navigation for a draft-save failure
       } else if (isCreate && result.data?.id) {
         setSubmissionId(result.data.id);
       }
 
-      // Persist to localStorage for refresh restore on /steps
+      // Persist to localStorage — merge Step 1 fields into any existing saved
+      // state so that Steps 2–8 data from a previous run is not overwritten.
       const stepIndex = 1; // "vehicle-details" is index 1 in the default sequence
-      saveFormState({ ...formState, photos: [] });
+      const existingSaved = loadFormState() || {};
+      saveFormState({ ...existingSaved, ...formState, photos: existingSaved.photos || [] });
       saveStepIndex(stepIndex);
 
       // Also write sessionStorage for the steps.jsx mount handler
@@ -577,15 +621,13 @@ export default function HeroSection({ content }) {
     manualYear,
     manualMake,
     customMake,
-    model,
+    manualModel,
     isUnsupportedYear,
     buildFormStateObj,
     router,
   ]);
 
   // ── Enter key: submit the hero form ───────────────────────────────────────
-  // Skip if focused element is a button (let it handle its own Enter/Space)
-  // or a textarea.
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key !== "Enter") return;
@@ -598,6 +640,26 @@ export default function HeroSection({ content }) {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [doSubmit]);
+
+  useEffect(() => {
+    restoreFormState();
+
+    const handleRouteChange = () => {
+      restoreFormState();
+    };
+
+    const handleFocus = () => {
+      restoreFormState();
+    };
+
+    router.events.on("routeChangeComplete", handleRouteChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [router.events, restoreFormState]);
 
   return (
     <>
@@ -655,42 +717,14 @@ export default function HeroSection({ content }) {
                     <button
                       className={`steps__tab${activeTab === "vin" ? " steps__tab--active" : ""}`}
                       type="button"
-                      onClick={() => {
-                        setActiveTab("vin");
-
-                        // isolate manual state (IMPORTANT)
-                        setManualYear("");
-                        setManualMake("");
-                        setCustomMake("");
-                        setModel("");
-                        setErrors({
-                          year: "",
-                          make: "",
-                          model: "",
-                          customMake: "",
-                        });
-                      }}
+                      onClick={() => setActiveTab("vin")}
                     >
                       VIN
                     </button>
                     <button
                       className={`steps__tab${activeTab === "manual" ? " steps__tab--active" : ""}`}
                       type="button"
-                      onClick={() => {
-                        setActiveTab("manual");
-
-                        // isolate VIN state (IMPORTANT)
-                        setVinValue("");
-                        setVinDecoded({
-                          year: "",
-                          make: "",
-                          vinModel: "",
-                          vehicleIdentified: "",
-                        });
-
-                        setVinDecodeError("");
-                        setVinDecodeSuccess(false);
-                      }}
+                      onClick={() => setActiveTab("manual")}
                     >
                       Year and Make
                     </button>
@@ -948,13 +982,14 @@ export default function HeroSection({ content }) {
                           >
                             Model
                           </label>
+                          {/* FIX: use manualModel state variable */}
                           <input
                             type="text"
                             className="steps__input"
                             placeholder="e.g. CBR600RR, Ninja 650, MT-07…"
-                            value={model}
+                            value={manualModel}
                             onChange={(e) => {
-                              setModel(e.target.value);
+                              setManualModel(e.target.value);
                               setErrors((p) => ({ ...p, model: "" }));
                             }}
                           />
