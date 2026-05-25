@@ -24,6 +24,8 @@ export default function Step6({ content }) {
           url: p.preview_url,
           name: p.original_filename,
           uploaded: true,
+          uploading: false,
+          failed: false,
           progress: 100,
           storage_path: p.storage_path,
           dbId: p.id,
@@ -39,10 +41,10 @@ export default function Step6({ content }) {
   // INSTANT UPLOAD
   const addFiles = async (files) => {
     const submissionId = getSubmissionId();
-    if (!submissionId) {
-      alert("Please complete Step 1 first.");
-      return;
-    }
+    // if (!submissionId) {
+    //   alert("Please complete Step 1 first.");
+    //   return;
+    // }
     const incoming = Array.from(files).map((file) => ({
       localId: crypto.randomUUID(),
       name: file.name,
@@ -51,6 +53,7 @@ export default function Step6({ content }) {
       progress: 0,
       uploading: true,
       uploaded: false,
+      failed: false,
     }));
     const updatedPhotos = [...photos, ...incoming].slice(0, 30);
     setValue("photos", updatedPhotos);
@@ -105,6 +108,7 @@ export default function Step6({ content }) {
                   progress: 100,
                   uploading: false,
                   uploaded: true,
+                  failed: false,
                   dbId: uploaded.id,
                   storage_path: uploaded.storage_path,
                   url: uploaded.preview_url,
@@ -255,39 +259,79 @@ export default function Step6({ content }) {
 
         {photos.length > 0 && (
           <div className="steps__upload-thumbs">
-            {photos.map((p) => (
-              <div key={p.localId || p.id} className="steps__upload-thumb">
-               <img src={p.url} alt={p.name} />
+            {photos.map((p) => {
+              // Determine upload state
+              let uploadState = "PREPARING";
+              if (p.uploaded) {
+                uploadState = "UPLOADED";
+              } else if (p.failed) {
+                uploadState = "FAILED";
+              } else if (p.uploading) {
+                uploadState = p.progress < 10 ? "PREPARING" : "UPLOADING";
+              } else if (p.progress > 0) {
+                uploadState = "UPLOADING";
+              }
 
-                <button
-                  type="button"
-                  className="steps__upload-thumb-remove"
-                  onClick={() => removePhoto(p)}
-                  aria-label="Remove photo"
+              return (
+                <div
+                  key={p.localId || p.id}
+                  className="steps__upload-thumb"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" width="12" height="12">
-                    <line
-                      x1="18"
-                      y1="6"
-                      x2="6"
-                      y2="18"
-                      stroke="#fff"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                    />
-                    <line
-                      x1="6"
-                      y1="6"
-                      x2="18"
-                      y2="18"
-                      stroke="#fff"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ))}
+                  <div className="steps__upload-thumb-inner">
+                    <button
+                      type="button"
+                      className="steps__upload-thumb-remove"
+                      onClick={() => removePhoto(p)}
+                      aria-label="Remove photo"
+                    >
+                      ×
+                    </button>
+
+                    <div className="steps__upload-thumb-image">
+                      <img src={p.url} alt={p.name} />
+                    </div>
+
+                    <div className="steps__upload-thumb-content">
+                      <p className="steps__upload-thumb-name">{p.name}</p>
+                      <div className="steps__upload-thumb-status-row">
+                        <div
+                          className="steps__upload-thumb-status"
+                          style={
+                            uploadState === "UPLOADING"
+                              ? { color: "rgb(242, 59, 45)" }
+                              : uploadState === "FAILED"
+                                ? { color: "rgb(242, 59, 45)" }
+                                : uploadState === "UPLOADED"
+                                  ? { color: "rgb(20, 128, 74)" }
+                                  : { color: "rgb(102, 102, 109)" }
+                          }
+                        >
+                          {uploadState === "UPLOADED"
+                            ? "Uploaded"
+                            : uploadState === "UPLOADING"
+                              ? "Uploading"
+                              : uploadState === "PREPARING"
+                                ? "Preparing"
+                                : "Failed"}
+                        </div>
+                      </div>
+                      {uploadState === "UPLOADING" && (
+                        <div className="steps__upload-progress-container">
+                          <div className="steps__upload-progress-bar">
+                            <div
+                              className="steps__upload-progress-fill"
+                              style={{
+                                width: `${p.progress || 0}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
